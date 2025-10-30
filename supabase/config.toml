@@ -1,0 +1,4 @@
+project_id = "nnqckrihnsisfvurfdhn"
+
+[functions.book-recommendations]
+verify_jwt = false
