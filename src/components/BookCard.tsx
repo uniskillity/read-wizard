@@ -12,6 +12,7 @@ interface BookCardProps {
   genre: string;
   rating?: number;
   publishedYear?: number;
+  imageUrl?: string;
   onSave?: (bookId: string) => void;
   onRate?: (bookId: string, rating: number) => void;
 }
@@ -24,6 +25,7 @@ export const BookCard = ({
   genre,
   rating = 0,
   publishedYear,
+  imageUrl,
   onSave,
   onRate,
 }: BookCardProps) => {
@@ -41,7 +43,16 @@ export const BookCard = ({
   };
 
   return (
-    <Card className="group h-full overflow-hidden transition-all duration-300 hover:shadow-book">
+    <Card className="group h-full overflow-hidden transition-all duration-300 hover:shadow-book hover:-translate-y-1">
+      {imageUrl && (
+        <div className="w-full h-48 overflow-hidden">
+          <img 
+            src={imageUrl.replace('http:', 'https:')} 
+            alt={title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        </div>
+      )}
       <CardHeader className="space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">

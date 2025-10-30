@@ -2,27 +2,36 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Auth } from "@/components/Auth";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { BookCard } from "@/components/BookCard";
-import { AIChat } from "@/components/AIChat";
-import { BookOpen, LogOut, Sparkles, TrendingUp } from "lucide-react";
+import { BookOpen, LogOut, Sparkles, TrendingUp, Search, Filter, BookMarked, History } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { searchBooks, getBooksByCategory, GoogleBook } from "@/lib/googleBooks";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import heroImage from "@/assets/hero-library.jpg";
 
-interface Book {
-  id: string;
-  title: string;
-  author: string;
-  description: string | null;
-  genre: string;
-  rating: number;
-  published_year: number | null;
-}
+const CATEGORIES = [
+  "All",
+  "Fiction",
+  "Non-Fiction",
+  "Science Fiction",
+  "Mystery",
+  "Romance",
+  "Biography",
+  "History",
+  "Self-Help",
+  "Fantasy",
+];
 
 const Index = () => {
   const [session, setSession] = useState<any>(null);
-  const [books, setBooks] = useState<Book[]>([]);
+  const [books, setBooks] = useState<GoogleBook[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -39,21 +48,16 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    if (session) {
-      fetchBooks();
-    }
-  }, [session]);
+    loadBooks();
+  }, [selectedCategory]);
 
-  const fetchBooks = async () => {
+  const loadBooks = async () => {
+    setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("books")
-        .select("*")
-        .order("rating", { ascending: false })
-        .limit(12);
-
-      if (error) throw error;
-      setBooks(data || []);
+      const data = selectedCategory === "All" 
+        ? await searchBooks("popular books", 40)
+        : await getBooksByCategory(selectedCategory, 40);
+      setBooks(data);
     } catch (error) {
       console.error("Error fetching books:", error);
       toast({
@@ -66,6 +70,16 @@ const Index = () => {
     }
   };
 
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    
+    setLoading(true);
+    const results = await searchBooks(searchQuery, 40);
+    setBooks(results);
+    setLoading(false);
+  };
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     toast({
@@ -75,9 +89,18 @@ const Index = () => {
   };
 
   const handleSaveBook = async (bookId: string) => {
+    if (!session) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to save books",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      const { error } = await supabase.from("reading_history").insert({
-        user_id: session?.user?.id,
+      const { error } = await supabase.from("reading_history").upsert({
+        user_id: session.user.id,
         book_id: bookId,
         status: "want_to_read",
       });
@@ -93,25 +116,6 @@ const Index = () => {
     }
   };
 
-  const handleRateBook = async (bookId: string, rating: number) => {
-    try {
-      const { error } = await supabase.from("feedback").insert({
-        user_id: session?.user?.id,
-        book_id: bookId,
-        feedback_type: "like",
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Thanks for rating!",
-        description: "Your feedback helps us improve recommendations",
-      });
-    } catch (error) {
-      console.error("Error rating book:", error);
-    }
-  };
-
   if (!session) {
     return <Auth />;
   }
@@ -120,17 +124,61 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-subtle">
       {/* Header */}
       <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-10 w-10 rounded-lg bg-gradient-warm flex items-center justify-center">
-              <BookOpen className="h-6 w-6 text-primary-foreground" />
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="h-10 w-10 rounded-lg bg-gradient-warm flex items-center justify-center">
+                <BookOpen className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <h1 className="text-2xl font-serif font-bold">BookWise</h1>
             </div>
-            <h1 className="text-2xl font-serif font-bold">BookWise</h1>
+            <div className="flex items-center gap-2">
+              {session && (
+                <>
+                  <Button variant="ghost" size="sm" onClick={() => navigate("/saved")}>
+                    <BookMarked className="mr-2 h-4 w-4" />
+                    Saved
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => navigate("/history")}>
+                    <History className="mr-2 h-4 w-4" />
+                    History
+                  </Button>
+                </>
+              )}
+              <Button variant="ghost" onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </Button>
+            </div>
           </div>
-          <Button variant="ghost" onClick={handleSignOut}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
+          
+          {/* Search Bar */}
+          <form onSubmit={handleSearch} className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search for books, authors, or genres..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-[180px]">
+                <Filter className="mr-2 h-4 w-4" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORIES.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button type="submit">Search</Button>
+          </form>
         </div>
       </header>
 
@@ -153,11 +201,19 @@ const Index = () => {
                 guide you through the world of literature.
               </p>
               <div className="flex gap-3 pt-2">
-                <Button size="lg" className="shadow-book">
+                <Button 
+                  size="lg" 
+                  className="shadow-book"
+                  onClick={() => session ? navigate("/recommendations") : toast({ title: "Sign in required", variant: "destructive" })}
+                >
                   <Sparkles className="mr-2 h-5 w-5" />
                   Get Recommendations
                 </Button>
-                <Button size="lg" variant="outline">
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  onClick={() => navigate("/trending")}
+                >
                   <TrendingUp className="mr-2 h-5 w-5" />
                   Explore Trending
                 </Button>
@@ -167,28 +223,15 @@ const Index = () => {
         </div>
       </section>
 
-      {/* AI Chat Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-8 space-y-2">
-            <h2 className="text-3xl font-serif font-bold">
-              Ask Our AI Book Advisor
-            </h2>
-            <p className="text-muted-foreground">
-              Describe what you're looking for, and we'll find the perfect match
-            </p>
-          </div>
-          <AIChat />
-        </div>
-      </section>
-
-      {/* Recommended Books Section */}
+      {/* Books Library Section */}
       <section className="py-16 bg-card/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8 space-y-2">
-            <h2 className="text-3xl font-serif font-bold">Curated For You</h2>
+            <h2 className="text-3xl font-serif font-bold">
+              {searchQuery ? `Results for "${searchQuery}"` : selectedCategory === "All" ? "Popular Books" : selectedCategory}
+            </h2>
             <p className="text-muted-foreground">
-              Handpicked recommendations based on your reading journey
+              {books.length} books available
             </p>
           </div>
 
@@ -196,21 +239,32 @@ const Index = () => {
             <div className="text-center py-12">
               <p className="text-muted-foreground">Loading books...</p>
             </div>
+          ) : books.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground mb-4">No books found</p>
+              <Button onClick={() => { setSearchQuery(""); loadBooks(); }}>
+                Clear Search
+              </Button>
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-slide-up">
               {books.map((book) => (
-                <BookCard
-                  key={book.id}
-                  id={book.id}
-                  title={book.title}
-                  author={book.author}
-                  description={book.description || undefined}
-                  genre={book.genre}
-                  rating={book.rating}
-                  publishedYear={book.published_year || undefined}
-                  onSave={handleSaveBook}
-                  onRate={handleRateBook}
-                />
+                <div 
+                  key={book.id} 
+                  onClick={() => navigate(`/book/${book.id}`)}
+                  className="cursor-pointer"
+                >
+                  <BookCard
+                    id={book.id}
+                    title={book.volumeInfo.title}
+                    author={book.volumeInfo.authors?.join(", ") || "Unknown Author"}
+                    description={book.volumeInfo.description}
+                    genre={book.volumeInfo.categories?.[0] || "General"}
+                    rating={book.volumeInfo.averageRating}
+                    imageUrl={book.volumeInfo.imageLinks?.thumbnail}
+                    onSave={handleSaveBook}
+                  />
+                </div>
               ))}
             </div>
           )}
@@ -218,11 +272,60 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t bg-card/50 backdrop-blur-sm py-8 mt-16">
-        <div className="container mx-auto px-4 text-center text-muted-foreground">
-          <p className="font-serif">
-            © 2024 BookWise. Helping readers discover their next favorite book.
-          </p>
+      <footer className="border-t bg-card/80 backdrop-blur-sm py-12 mt-16">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-8 w-8 rounded-lg bg-gradient-warm flex items-center justify-center">
+                  <BookOpen className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <h3 className="text-lg font-serif font-bold">BookWise</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Discover your next great read with AI-powered recommendations
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Quick Links</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><button onClick={() => navigate("/trending")} className="hover:text-primary transition-colors">Trending</button></li>
+                <li><button onClick={() => navigate("/recommendations")} className="hover:text-primary transition-colors">Recommendations</button></li>
+                <li><button onClick={() => navigate("/saved")} className="hover:text-primary transition-colors">Saved Books</button></li>
+                <li><button onClick={() => navigate("/history")} className="hover:text-primary transition-colors">Reading History</button></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Categories</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                {CATEGORIES.slice(1, 6).map((cat) => (
+                  <li key={cat}>
+                    <button 
+                      onClick={() => { setSelectedCategory(cat); window.scrollTo(0, 0); }}
+                      className="hover:text-primary transition-colors"
+                    >
+                      {cat}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">About</h4>
+              <p className="text-sm text-muted-foreground">
+                BookWise uses advanced AI to help you discover books tailored to your taste.
+              </p>
+            </div>
+          </div>
+          
+          <div className="border-t pt-8 text-center text-sm text-muted-foreground">
+            <p className="font-serif">
+              © 2024 BookWise. Powered by Google Books API & AI recommendations.
+            </p>
+          </div>
         </div>
       </footer>
     </div>
