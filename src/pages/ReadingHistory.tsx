@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Auth } from "@/components/Auth";
+import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, History } from "lucide-react";
 import { BookCard } from "@/components/BookCard";
 import { getBookDetails, GoogleBook } from "@/lib/googleBooks";
 
@@ -51,20 +51,9 @@ const ReadingHistory = () => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
+      <Navigation />
       <div className="container mx-auto px-4 py-8">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/")}
-          className="mb-6 animate-fade-in"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Library
-        </Button>
-
-        <div className="flex items-center gap-3 mb-8 animate-fade-in">
-          <History className="h-8 w-8 text-primary" />
-          <h1 className="text-4xl font-serif font-bold">Reading History</h1>
-        </div>
+        <h1 className="text-4xl font-serif font-bold mb-8 animate-fade-in">Reading History</h1>
 
         {loading ? (
           <p className="text-center text-muted-foreground">Loading history...</p>

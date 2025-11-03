@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Auth } from "@/components/Auth";
+import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Sparkles } from "lucide-react";
 import { BookCard } from "@/components/BookCard";
 import { searchBooks, GoogleBook } from "@/lib/googleBooks";
 import { Card, CardContent } from "@/components/ui/card";
@@ -71,20 +71,9 @@ const Recommendations = () => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
+      <Navigation />
       <div className="container mx-auto px-4 py-8">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/")}
-          className="mb-6 animate-fade-in"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Library
-        </Button>
-
-        <div className="flex items-center gap-3 mb-8 animate-fade-in">
-          <Sparkles className="h-8 w-8 text-primary" />
-          <h1 className="text-4xl font-serif font-bold">AI Recommendations</h1>
-        </div>
+        <h1 className="text-4xl font-serif font-bold mb-8 animate-fade-in">AI Recommendations</h1>
 
         {aiRecommendation && (
           <Card className="mb-8 animate-fade-in shadow-book">

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Auth } from "@/components/Auth";
+import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BookCard } from "@/components/BookCard";
-import { BookOpen, LogOut, Sparkles, TrendingUp, Search, Filter, BookMarked, History } from "lucide-react";
+import { Sparkles, TrendingUp, Search, Filter, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { searchBooks, getBooksByCategory, GoogleBook } from "@/lib/googleBooks";
@@ -122,37 +123,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
-      {/* Header */}
-      <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
+      <Navigation />
+      
+      {/* Search Bar Section */}
+      <div className="border-b bg-card/80 backdrop-blur-sm sticky top-16 z-40 shadow-sm">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="h-10 w-10 rounded-lg bg-gradient-warm flex items-center justify-center">
-                <BookOpen className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <h1 className="text-2xl font-serif font-bold">BookWise</h1>
-            </div>
-            <div className="flex items-center gap-2">
-              {session && (
-                <>
-                  <Button variant="ghost" size="sm" onClick={() => navigate("/saved")}>
-                    <BookMarked className="mr-2 h-4 w-4" />
-                    Saved
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => navigate("/history")}>
-                    <History className="mr-2 h-4 w-4" />
-                    History
-                  </Button>
-                </>
-              )}
-              <Button variant="ghost" onClick={handleSignOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-              </Button>
-            </div>
-          </div>
-          
-          {/* Search Bar */}
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -180,7 +155,7 @@ const Index = () => {
             <Button type="submit">Search</Button>
           </form>
         </div>
-      </header>
+      </div>
 
       {/* Hero Section */}
       <section className="relative h-[400px] overflow-hidden">

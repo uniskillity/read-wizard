@@ -8,12 +8,34 @@ export interface GoogleBook {
     imageLinks?: {
       thumbnail?: string;
       smallThumbnail?: string;
+      large?: string;
+      medium?: string;
     };
     publishedDate?: string;
     pageCount?: number;
     averageRating?: number;
     previewLink?: string;
     infoLink?: string;
+    publisher?: string;
+    language?: string;
+    industryIdentifiers?: Array<{
+      type: string;
+      identifier: string;
+    }>;
+    canonicalVolumeLink?: string;
+  };
+  accessInfo?: {
+    embeddable?: boolean;
+    webReaderLink?: string;
+    pdf?: {
+      isAvailable: boolean;
+      downloadLink?: string;
+    };
+    epub?: {
+      isAvailable: boolean;
+      downloadLink?: string;
+    };
+    accessViewStatus?: string;
   };
 }
 

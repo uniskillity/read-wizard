@@ -9,6 +9,7 @@ import SavedBooks from "./pages/SavedBooks";
 import ReadingHistory from "./pages/ReadingHistory";
 import Recommendations from "./pages/Recommendations";
 import Trending from "./pages/Trending";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/history" element={<ReadingHistory />} />
           <Route path="/recommendations" element={<Recommendations />} />
           <Route path="/trending" element={<Trending />} />
+          <Route path="/profile" element={<Profile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -4,10 +4,12 @@ import { getBookDetails, GoogleBook, searchBooks } from "@/lib/googleBooks";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, BookOpen, Heart, Star, Share2, Download, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ArrowLeft, BookOpen, Heart, Star, Share2, Download, Trash2, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BookCard } from "@/components/BookCard";
+import { Navigation } from "@/components/Navigation";
 
 const BookDetails = () => {
   const { id } = useParams();
@@ -20,6 +22,7 @@ const BookDetails = () => {
   const [userRating, setUserRating] = useState<number>(0);
   const [savedBookId, setSavedBookId] = useState<string | null>(null);
   const [recommendedBooks, setRecommendedBooks] = useState<GoogleBook[]>([]);
+  const [showReader, setShowReader] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -161,8 +164,8 @@ const BookDetails = () => {
   };
 
   const handleRead = async () => {
-    if (book?.volumeInfo.previewLink) {
-      window.open(book.volumeInfo.previewLink, "_blank");
+    if (book?.accessInfo?.embeddable || book?.accessInfo?.webReaderLink) {
+      setShowReader(true);
       
       if (session && !isSaved) {
         try {
@@ -185,6 +188,8 @@ const BookDetails = () => {
           console.error("Error tracking reading:", error);
         }
       }
+    } else if (book?.volumeInfo.previewLink) {
+      window.open(book.volumeInfo.previewLink, "_blank");
     }
   };
 
@@ -209,10 +214,24 @@ const BookDetails = () => {
   };
 
   const handleDownload = () => {
-    if (book?.volumeInfo.infoLink) {
+    if (book?.accessInfo?.pdf?.isAvailable && book?.accessInfo?.pdf?.downloadLink) {
+      window.open(book.accessInfo.pdf.downloadLink, "_blank");
+      toast({
+        title: "Opening PDF",
+        description: "The PDF version is now opening",
+      });
+    } else if (book?.accessInfo?.epub?.isAvailable && book?.accessInfo?.epub?.downloadLink) {
+      window.open(book.accessInfo.epub.downloadLink, "_blank");
+      toast({
+        title: "Opening EPUB",
+        description: "The EPUB version is now opening",
+      });
+    } else if (book?.volumeInfo.infoLink) {
       window.open(book.volumeInfo.infoLink, "_blank");
-    } else if (book?.volumeInfo.previewLink) {
-      window.open(book.volumeInfo.previewLink, "_blank");
+      toast({
+        title: "Opening book info",
+        description: "View more details and purchase options",
+      });
     }
   };
 
@@ -237,14 +256,15 @@ const BookDetails = () => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
+      <Navigation />
       <div className="container mx-auto px-4 py-8">
         <Button
           variant="ghost"
-          onClick={() => navigate("/")}
+          onClick={() => navigate(-1)}
           className="mb-6 animate-fade-in"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Library
+          Back
         </Button>
 
         <div className="grid md:grid-cols-3 gap-8 animate-slide-up">
@@ -262,7 +282,7 @@ const BookDetails = () => {
             <div className="mt-6 space-y-3">
               <Button onClick={handleRead} className="w-full" size="lg">
                 <BookOpen className="mr-2 h-5 w-5" />
-                Read Preview
+                {book.accessInfo?.embeddable ? "Read Online" : "Read Preview"}
               </Button>
               <Button onClick={handleSave} variant="outline" className="w-full" size="lg">
                 <Heart className={`mr-2 h-5 w-5 ${isSaved ? "fill-primary" : ""}`} />
@@ -275,9 +295,19 @@ const BookDetails = () => {
                 </Button>
                 <Button onClick={handleDownload} variant="outline" className="flex-1">
                   <Download className="mr-2 h-4 w-4" />
-                  View More
+                  {book.accessInfo?.pdf?.isAvailable || book.accessInfo?.epub?.isAvailable ? "Download" : "View More"}
                 </Button>
               </div>
+              {(book.accessInfo?.pdf?.isAvailable || book.accessInfo?.epub?.isAvailable) && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary p-2 rounded">
+                  <FileText className="h-4 w-4" />
+                  <span>
+                    Available: {book.accessInfo?.pdf?.isAvailable && "PDF"} 
+                    {book.accessInfo?.pdf?.isAvailable && book.accessInfo?.epub?.isAvailable && " & "}
+                    {book.accessInfo?.epub?.isAvailable && "EPUB"}
+                  </span>
+                </div>
+              )}
               {isSaved && (
                 <Button onClick={handleSave} variant="destructive" className="w-full" size="lg">
                   <Trash2 className="mr-2 h-5 w-5" />
@@ -314,7 +344,23 @@ const BookDetails = () => {
                     Published: {book.volumeInfo.publishedDate}
                   </span>
                 )}
+                {book.volumeInfo.publisher && (
+                  <span className="text-muted-foreground">
+                    {book.volumeInfo.publisher}
+                  </span>
+                )}
+                {book.volumeInfo.language && (
+                  <Badge variant="outline">{book.volumeInfo.language.toUpperCase()}</Badge>
+                )}
               </div>
+
+              {book.volumeInfo.industryIdentifiers && book.volumeInfo.industryIdentifiers.length > 0 && (
+                <div className="flex gap-2 text-sm text-muted-foreground flex-wrap">
+                  {book.volumeInfo.industryIdentifiers.map((id, idx) => (
+                    <span key={idx}>{id.type}: {id.identifier}</span>
+                  ))}
+                </div>
+              )}
 
               <div className="flex items-center gap-2 pt-2">
                 <span className="text-sm font-medium">Your Rating:</span>
@@ -397,6 +443,30 @@ const BookDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Embedded Book Reader Dialog */}
+      <Dialog open={showReader} onOpenChange={setShowReader}>
+        <DialogContent className="max-w-5xl h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>{book.volumeInfo.title}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 h-full">
+            {book.accessInfo?.webReaderLink ? (
+              <iframe
+                src={book.accessInfo.webReaderLink}
+                className="w-full h-full rounded border"
+                title="Book Reader"
+              />
+            ) : (
+              <iframe
+                src={`https://books.google.com/books?id=${id}&lpg=PP1&pg=PP1&output=embed`}
+                className="w-full h-full rounded border"
+                title="Book Reader"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

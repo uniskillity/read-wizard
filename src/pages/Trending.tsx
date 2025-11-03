@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Navigation } from "@/components/Navigation";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, TrendingUp } from "lucide-react";
 import { BookCard } from "@/components/BookCard";
 import { getTrendingBooks, GoogleBook } from "@/lib/googleBooks";
 
@@ -22,20 +21,11 @@ const Trending = () => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
+      <Navigation />
       <div className="container mx-auto px-4 py-8">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/")}
-          className="mb-6 animate-fade-in"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Library
-        </Button>
-
-        <div className="flex items-center gap-3 mb-8 animate-fade-in">
-          <TrendingUp className="h-8 w-8 text-primary" />
+        <div className="mb-8 animate-fade-in">
           <h1 className="text-4xl font-serif font-bold">Trending Books</h1>
-          <p className="text-muted-foreground ml-auto">What everyone's reading</p>
+          <p className="text-muted-foreground mt-2">What everyone's reading</p>
         </div>
 
         {loading ? (
