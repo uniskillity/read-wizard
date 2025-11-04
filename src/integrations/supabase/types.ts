@@ -14,11 +14,64 @@ export type Database = {
   }
   public: {
     Tables: {
+      book_issues: {
+        Row: {
+          book_id: string
+          created_at: string | null
+          due_date: string
+          id: string
+          issue_date: string | null
+          issued_by: string
+          notes: string | null
+          return_date: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string | null
+          due_date: string
+          id?: string
+          issue_date?: string | null
+          issued_by: string
+          notes?: string | null
+          return_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string | null
+          due_date?: string
+          id?: string
+          issue_date?: string | null
+          issued_by?: string
+          notes?: string | null
+          return_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_issues_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       books: {
         Row: {
           author: string
+          available_copies: number | null
+          category_id: string | null
           cover_url: string | null
           created_at: string | null
+          created_by: string | null
           description: string | null
           genre: string
           id: string
@@ -26,11 +79,16 @@ export type Database = {
           published_year: number | null
           rating: number | null
           title: string
+          total_copies: number | null
+          updated_at: string | null
         }
         Insert: {
           author: string
+          available_copies?: number | null
+          category_id?: string | null
           cover_url?: string | null
           created_at?: string | null
+          created_by?: string | null
           description?: string | null
           genre: string
           id?: string
@@ -38,11 +96,16 @@ export type Database = {
           published_year?: number | null
           rating?: number | null
           title: string
+          total_copies?: number | null
+          updated_at?: string | null
         }
         Update: {
           author?: string
+          available_copies?: number | null
+          category_id?: string | null
           cover_url?: string | null
           created_at?: string | null
+          created_by?: string | null
           description?: string | null
           genre?: string
           id?: string
@@ -50,6 +113,40 @@ export type Database = {
           published_year?: number | null
           rating?: number | null
           title?: string
+          total_copies?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "books_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -94,6 +191,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          member_since: string | null
+          phone: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          member_since?: string | null
+          phone?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          member_since?: string | null
+          phone?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       reading_history: {
         Row: {
@@ -210,15 +343,43 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin_or_staff: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "staff" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -345,6 +506,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "staff", "user"],
+    },
   },
 } as const
