@@ -10,6 +10,9 @@ import ReadingHistory from "./pages/ReadingHistory";
 import Recommendations from "./pages/Recommendations";
 import Trending from "./pages/Trending";
 import Profile from "./pages/Profile";
+import Admin from "./pages/Admin";
+import Reports from "./pages/Reports";
+import MyBooks from "./pages/MyBooks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +31,9 @@ const App = () => (
           <Route path="/recommendations" element={<Recommendations />} />
           <Route path="/trending" element={<Trending />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/my-books" element={<MyBooks />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
