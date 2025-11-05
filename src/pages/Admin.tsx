@@ -11,7 +11,7 @@ import { IssueManagement } from '@/components/admin/IssueManagement';
 import { Loader2 } from 'lucide-react';
 
 const Admin = () => {
-  const { isStaff, loading } = useUserRole();
+  const { isStaff, isAdmin, loading } = useUserRole();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -37,12 +37,12 @@ const Admin = () => {
         <h1 className="text-4xl font-bold mb-8">Admin Dashboard</h1>
         
         <Tabs defaultValue="books" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-5' : 'grid-cols-3'}`}>
             <TabsTrigger value="books">Books</TabsTrigger>
             <TabsTrigger value="categories">Categories</TabsTrigger>
             <TabsTrigger value="issues">Issues</TabsTrigger>
-            <TabsTrigger value="members">Members</TabsTrigger>
-            <TabsTrigger value="staff">Staff</TabsTrigger>
+            {isAdmin && <TabsTrigger value="members">Members</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="staff">Staff</TabsTrigger>}
           </TabsList>
           
           <TabsContent value="books">
@@ -57,13 +57,17 @@ const Admin = () => {
             <IssueManagement />
           </TabsContent>
           
-          <TabsContent value="members">
-            <MemberManagement />
-          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="members">
+              <MemberManagement />
+            </TabsContent>
+          )}
           
-          <TabsContent value="staff">
-            <StaffManagement />
-          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="staff">
+              <StaffManagement />
+            </TabsContent>
+          )}
         </Tabs>
       </main>
     </div>
