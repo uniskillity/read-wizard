@@ -128,7 +128,7 @@ const Index = () => {
       {/* Search Bar Section */}
       <div className="border-b bg-card/80 backdrop-blur-sm sticky top-16 z-40 shadow-sm">
         <div className="container mx-auto px-4 py-4">
-          <form onSubmit={handleSearch} className="flex gap-2">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -140,7 +140,7 @@ const Index = () => {
               />
             </div>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <Filter className="mr-2 h-4 w-4" />
                 <SelectValue />
               </SelectTrigger>
@@ -152,13 +152,13 @@ const Index = () => {
                 ))}
               </SelectContent>
             </Select>
-            <Button type="submit">Search</Button>
+            <Button type="submit" className="w-full sm:w-auto">Search</Button>
           </form>
         </div>
       </div>
 
       {/* Hero Section */}
-      <section className="relative h-[400px] overflow-hidden">
+      <section className="relative h-[300px] sm:h-[400px] md:h-[500px] overflow-hidden">
         <img
           src={heroImage}
           alt="Beautiful library with warm lighting"
@@ -166,19 +166,19 @@ const Index = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-transparent flex items-center">
           <div className="container mx-auto px-4">
-            <div className="max-w-2xl space-y-4 animate-fade-in">
-              <h2 className="text-5xl font-serif font-bold leading-tight">
+            <div className="max-w-2xl space-y-3 sm:space-y-4 animate-fade-in">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold leading-tight">
                 Discover Your Next
                 <span className="block text-primary mt-2">Great Read</span>
               </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
                 AI-powered recommendations tailored to your unique taste. Let us
                 guide you through the world of literature.
               </p>
-              <div className="flex gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Button 
                   size="lg" 
-                  className="shadow-book"
+                  className="shadow-book w-full sm:w-auto"
                   onClick={() => session ? navigate("/recommendations") : toast({ title: "Sign in required", variant: "destructive" })}
                 >
                   <Sparkles className="mr-2 h-5 w-5" />
@@ -187,6 +187,7 @@ const Index = () => {
                 <Button 
                   size="lg" 
                   variant="outline"
+                  className="w-full sm:w-auto"
                   onClick={() => navigate("/trending")}
                 >
                   <TrendingUp className="mr-2 h-5 w-5" />
@@ -249,7 +250,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t bg-card/80 backdrop-blur-sm py-12 mt-16">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="h-8 w-8 rounded-lg bg-gradient-warm flex items-center justify-center">

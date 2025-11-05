@@ -267,7 +267,7 @@ const BookDetails = () => {
           Back
         </Button>
 
-        <div className="grid md:grid-cols-3 gap-8 animate-slide-up">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-slide-up">
           <div className="md:col-span-1">
             <Card className="overflow-hidden shadow-book">
               <CardContent className="p-0">
@@ -326,10 +326,10 @@ const BookDetails = () => {
                 by {book.volumeInfo.authors?.join(", ") || "Unknown Author"}
               </p>
 
-              <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2 sm:gap-4 flex-wrap text-sm sm:text-base">
                 {book.volumeInfo.averageRating && (
                   <div className="flex items-center gap-1">
-                    <Star className="h-5 w-5 fill-primary text-primary" />
+                    <Star className="h-4 w-4 sm:h-5 sm:w-5 fill-primary text-primary" />
                     <span className="font-medium">{book.volumeInfo.averageRating}</span>
                     <span className="text-xs text-muted-foreground">(avg)</span>
                   </div>
@@ -414,7 +414,7 @@ const BookDetails = () => {
             {recommendedBooks.length > 0 && (
               <div>
                 <h2 className="text-2xl font-serif font-bold mb-4">Recommended Books</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {recommendedBooks.slice(0, 4).map((recBook) => (
                     <div 
                       key={recBook.id} 

@@ -34,7 +34,7 @@ const Admin = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold mb-8">Admin Dashboard</h1>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-8">Admin Dashboard</h1>
         
         <Tabs defaultValue="books" className="w-full">
           <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-5' : 'grid-cols-3'}`}>
