@@ -13,6 +13,10 @@ interface BookCardProps {
   rating?: number;
   publishedYear?: number;
   imageUrl?: string;
+  department?: string;
+  semester?: number;
+  courseCode?: string;
+  pdfUrl?: string;
   onSave?: (bookId: string) => void;
   onRate?: (bookId: string, rating: number) => void;
 }
@@ -26,6 +30,10 @@ export const BookCard = ({
   rating = 0,
   publishedYear,
   imageUrl,
+  department,
+  semester,
+  courseCode,
+  pdfUrl,
   onSave,
   onRate,
 }: BookCardProps) => {
@@ -78,13 +86,20 @@ export const BookCard = ({
         </div>
         
         <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant="secondary" className="font-sans text-xs">
-            {genre}
-          </Badge>
-          {publishedYear && (
-            <span className="text-xs text-muted-foreground">
-              {publishedYear}
-            </span>
+          {department && (
+            <Badge variant="outline" className="font-sans text-xs bg-primary/5 text-primary border-primary/20">
+              {department}
+            </Badge>
+          )}
+          {semester && (
+            <Badge variant="secondary" className="font-sans text-xs bg-secondary/10 text-secondary">
+              Semester {semester}
+            </Badge>
+          )}
+          {courseCode && (
+            <Badge variant="outline" className="font-sans text-xs">
+              {courseCode}
+            </Badge>
           )}
         </div>
       </CardHeader>

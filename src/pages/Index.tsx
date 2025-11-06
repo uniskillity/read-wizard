@@ -1,38 +1,41 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Session } from "@supabase/supabase-js";
 import { Auth } from "@/components/Auth";
 import { Navigation } from "@/components/Navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { BookCard } from "@/components/BookCard";
-import { Sparkles, TrendingUp, Search, Filter, BookOpen } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-import { searchBooks, getBooksByCategory, GoogleBook } from "@/lib/googleBooks";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import heroImage from "@/assets/hero-library.jpg";
+import { Search, BookOpen, GraduationCap, Library, FileText } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { searchBooks, GoogleBook } from "@/lib/googleBooks";
+import heroImage from "@/assets/hero-maju.jpg";
+import { Link } from "react-router-dom";
 
-const CATEGORIES = [
-  "All",
-  "Fiction",
-  "Non-Fiction",
-  "Science Fiction",
-  "Mystery",
-  "Romance",
-  "Biography",
-  "History",
-  "Self-Help",
-  "Fantasy",
+const DEPARTMENTS = [
+  "All Departments",
+  "BS Computer Science",
+  "BS Software Engineering", 
+  "BS Artificial Intelligence",
+  "BBA",
+  "BS FinTech",
+  "BS Business Computing",
+  "BS Accounting & Finance",
+  "BS Biotechnology",
+  "BS Psychology"
 ];
 
+const SEMESTERS = ["All Semesters", "1", "2", "3", "4", "5", "6", "7", "8"];
+
 const Index = () => {
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [books, setBooks] = useState<GoogleBook[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedDepartment, setSelectedDepartment] = useState("All Departments");
+  const [selectedSemester, setSelectedSemester] = useState("All Semesters");
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -50,21 +53,26 @@ const Index = () => {
 
   useEffect(() => {
     loadBooks();
-  }, [selectedCategory]);
+  }, [selectedDepartment, selectedSemester]);
 
   const loadBooks = async () => {
     setLoading(true);
     try {
-      const data = selectedCategory === "All" 
-        ? await searchBooks("popular books", 40)
-        : await getBooksByCategory(selectedCategory, 40);
-      setBooks(data);
+      let query = "";
+      if (selectedDepartment !== "All Departments") {
+        query = `${selectedDepartment} textbook`;
+      }
+      if (selectedSemester !== "All Semesters") {
+        query += (query ? " " : "") + `semester ${selectedSemester}`;
+      }
+      
+      const results = query ? await searchBooks(query, 40) : await searchBooks("university textbook computer science", 40);
+      setBooks(results);
     } catch (error) {
-      console.error("Error fetching books:", error);
       toast({
-        title: "Error",
-        description: "Failed to load books",
         variant: "destructive",
+        title: "Error loading books",
+        description: "Please try again later.",
       });
     } finally {
       setLoading(false);
@@ -73,34 +81,46 @@ const Index = () => {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Empty search",
+        description: "Please enter a search term",
+      });
+      return;
+    }
     
     setLoading(true);
-    const results = await searchBooks(searchQuery, 40);
-    setBooks(results);
-    setLoading(false);
+    try {
+      const results = await searchBooks(searchQuery, 40);
+      setBooks(results);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Search failed",
+        description: "Please try again later.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    toast({
-      title: "Signed out",
-      description: "Come back soon!",
-    });
   };
 
   const handleSaveBook = async (bookId: string) => {
     if (!session) {
       toast({
+        variant: "destructive",
         title: "Sign in required",
         description: "Please sign in to save books",
-        variant: "destructive",
       });
       return;
     }
 
     try {
-      const { error } = await supabase.from("reading_history").upsert({
+      const { error } = await supabase.from("reading_history").insert({
         user_id: session.user.id,
         book_id: bookId,
         status: "want_to_read",
@@ -109,11 +129,15 @@ const Index = () => {
       if (error) throw error;
 
       toast({
-        title: "Saved!",
-        description: "Book added to your reading list",
+        title: "Book saved!",
+        description: "Added to your reading list",
       });
     } catch (error) {
-      console.error("Error saving book:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save book. Please try again.",
+      });
     }
   };
 
@@ -125,182 +149,191 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-subtle">
       <Navigation />
       
-      {/* Search Bar Section */}
-      <div className="border-b bg-card/80 backdrop-blur-sm sticky top-16 z-40 shadow-sm">
+      {/* Search Header */}
+      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
         <div className="container mx-auto px-4 py-4">
-          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
-            <div className="relative flex-1">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                type="text"
-                placeholder="Search for books, authors, or genres..."
+                type="search"
+                placeholder="Search for textbooks, course materials..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 w-full"
               />
             </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <Filter className="mr-2 h-4 w-4" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIES.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button type="submit" className="w-full sm:w-auto">Search</Button>
+            <div className="flex gap-2 flex-col sm:flex-row">
+              <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue placeholder="Department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DEPARTMENTS.map((dept) => (
+                    <SelectItem key={dept} value={dept}>
+                      {dept}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedSemester} onValueChange={setSelectedSemester}>
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue placeholder="Semester" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SEMESTERS.map((sem) => (
+                    <SelectItem key={sem} value={sem}>
+                      {sem}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button type="submit" className="w-full sm:w-auto">
+                Search
+              </Button>
+            </div>
           </form>
         </div>
       </div>
 
       {/* Hero Section */}
-      <section className="relative h-[300px] sm:h-[400px] md:h-[500px] overflow-hidden">
-        <img
-          src={heroImage}
-          alt="Beautiful library with warm lighting"
+      <div className="relative h-[300px] sm:h-[400px] lg:h-[500px] overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-hero opacity-90"></div>
+        <img 
+          src={heroImage} 
+          alt="MAJU Library" 
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-transparent flex items-center">
-          <div className="container mx-auto px-4">
-            <div className="max-w-2xl space-y-3 sm:space-y-4 animate-fade-in">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold leading-tight">
-                Discover Your Next
-                <span className="block text-primary mt-2">Great Read</span>
-              </h2>
-              <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-                AI-powered recommendations tailored to your unique taste. Let us
-                guide you through the world of literature.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <Button 
-                  size="lg" 
-                  className="shadow-book w-full sm:w-auto"
-                  onClick={() => session ? navigate("/recommendations") : toast({ title: "Sign in required", variant: "destructive" })}
-                >
-                  <Sparkles className="mr-2 h-5 w-5" />
-                  Get Recommendations
-                </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  className="w-full sm:w-auto"
-                  onClick={() => navigate("/trending")}
-                >
-                  <TrendingUp className="mr-2 h-5 w-5" />
-                  Explore Trending
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Books Library Section */}
-      <section className="py-16 bg-card/30">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-8 space-y-2">
-            <h2 className="text-3xl font-serif font-bold">
-              {searchQuery ? `Results for "${searchQuery}"` : selectedCategory === "All" ? "Popular Books" : selectedCategory}
-            </h2>
-            <p className="text-muted-foreground">
-              {books.length} books available
-            </p>
-          </div>
-
-          {loading ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Loading books...</p>
-            </div>
-          ) : books.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">No books found</p>
-              <Button onClick={() => { setSearchQuery(""); loadBooks(); }}>
-                Clear Search
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-white px-4 text-center">
+          <GraduationCap className="h-16 w-16 mb-4" />
+          <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold mb-4">
+            MAJU University Library
+          </h1>
+          <p className="text-lg sm:text-xl lg:text-2xl mb-2 max-w-3xl">
+            Mohammad Ali Jinnah University Digital Library
+          </p>
+          <p className="text-sm sm:text-base lg:text-lg mb-8 max-w-2xl opacity-90">
+            Access textbooks, course materials, and academic resources for all semesters and departments
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+            <Link to="/my-books">
+              <Button size="lg" variant="secondary" className="w-full sm:w-auto">
+                <Library className="mr-2 h-5 w-5" />
+                My Books
               </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-slide-up">
-              {books.map((book) => (
-                <div 
-                  key={book.id} 
-                  onClick={() => navigate(`/book/${book.id}`)}
-                  className="cursor-pointer"
-                >
-                  <BookCard
-                    id={book.id}
-                    title={book.volumeInfo.title}
-                    author={book.volumeInfo.authors?.join(", ") || "Unknown Author"}
-                    description={book.volumeInfo.description}
-                    genre={book.volumeInfo.categories?.[0] || "General"}
-                    rating={book.volumeInfo.averageRating}
-                    imageUrl={book.volumeInfo.imageLinks?.thumbnail}
-                    onSave={handleSaveBook}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
+            </Link>
+            <Link to="/trending">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border-white/30">
+                <BookOpen className="mr-2 h-5 w-5" />
+                Browse Catalog
+              </Button>
+            </Link>
+          </div>
         </div>
-      </section>
+      </div>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-12">
+        <div className="mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2 flex items-center gap-2">
+            <GraduationCap className="h-7 w-7 text-primary" />
+            Academic Resources
+          </h2>
+          <p className="text-muted-foreground">
+            Browse textbooks and materials for your courses
+            {selectedDepartment !== "All Departments" && ` - ${selectedDepartment}`}
+            {selectedSemester !== "All Semesters" && ` - Semester ${selectedSemester}`}
+          </p>
+        </div>
+
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="h-[400px] bg-muted animate-pulse rounded-lg"></div>
+            ))}
+          </div>
+        ) : books.length === 0 ? (
+          <div className="text-center py-20">
+            <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2">No books found</h3>
+            <p className="text-muted-foreground">Try adjusting your filters or search query</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {books.map((book) => (
+              <Link key={book.id} to={`/book/${book.id}`}>
+                <BookCard
+                  id={book.id}
+                  title={book.volumeInfo.title}
+                  author={book.volumeInfo.authors?.join(", ") || "Unknown"}
+                  description={book.volumeInfo.description}
+                  genre={book.volumeInfo.categories?.[0] || "General"}
+                  rating={book.volumeInfo.averageRating || 0}
+                  publishedYear={
+                    book.volumeInfo.publishedDate
+                      ? new Date(book.volumeInfo.publishedDate).getFullYear()
+                      : undefined
+                  }
+                  imageUrl={
+                    book.volumeInfo.imageLinks?.thumbnail ||
+                    book.volumeInfo.imageLinks?.smallThumbnail
+                  }
+                  department={selectedDepartment !== "All Departments" ? selectedDepartment : undefined}
+                  semester={selectedSemester !== "All Semesters" ? parseInt(selectedSemester) : undefined}
+                  onSave={handleSaveBook}
+                />
+              </Link>
+            ))}
+          </div>
+        )}
+      </main>
 
       {/* Footer */}
-      <footer className="border-t bg-card/80 backdrop-blur-sm py-12 mt-16">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+      <footer className="bg-primary text-primary-foreground mt-20">
+        <div className="container mx-auto px-4 py-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="h-8 w-8 rounded-lg bg-gradient-warm flex items-center justify-center">
-                  <BookOpen className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <h3 className="text-lg font-serif font-bold">BookWise</h3>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Discover your next great read with AI-powered recommendations
+              <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                <GraduationCap className="h-5 w-5" />
+                MAJU Library
+              </h3>
+              <p className="text-sm opacity-90">
+                Mohammad Ali Jinnah University's comprehensive digital library providing access to academic resources for all students.
               </p>
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><button onClick={() => navigate("/trending")} className="hover:text-primary transition-colors">Trending</button></li>
-                <li><button onClick={() => navigate("/recommendations")} className="hover:text-primary transition-colors">Recommendations</button></li>
-                <li><button onClick={() => navigate("/saved")} className="hover:text-primary transition-colors">Saved Books</button></li>
-                <li><button onClick={() => navigate("/history")} className="hover:text-primary transition-colors">Reading History</button></li>
+              <h4 className="font-semibold mb-3">Quick Links</h4>
+              <ul className="space-y-2 text-sm">
+                <li><Link to="/trending" className="hover:underline opacity-90">Browse Catalog</Link></li>
+                <li><Link to="/my-books" className="hover:underline opacity-90">My Books</Link></li>
+                <li><Link to="/saved" className="hover:underline opacity-90">Saved Books</Link></li>
+                <li><Link to="/history" className="hover:underline opacity-90">Reading History</Link></li>
               </ul>
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4">Categories</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                {CATEGORIES.slice(1, 6).map((cat) => (
-                  <li key={cat}>
-                    <button 
-                      onClick={() => { setSelectedCategory(cat); window.scrollTo(0, 0); }}
-                      className="hover:text-primary transition-colors"
-                    >
-                      {cat}
-                    </button>
-                  </li>
-                ))}
+              <h4 className="font-semibold mb-3">Faculties</h4>
+              <ul className="space-y-2 text-sm">
+                <li className="opacity-90">Faculty of Computing</li>
+                <li className="opacity-90">Faculty of Business</li>
+                <li className="opacity-90">Faculty of Life Sciences</li>
+                <li className="opacity-90">Faculty of Engineering</li>
               </ul>
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4">About</h4>
-              <p className="text-sm text-muted-foreground">
-                BookWise uses advanced AI to help you discover books tailored to your taste.
-              </p>
+              <h4 className="font-semibold mb-3">Support</h4>
+              <ul className="space-y-2 text-sm">
+                <li><a href="https://jinnah.edu" target="_blank" rel="noopener noreferrer" className="hover:underline opacity-90">University Website</a></li>
+                <li><Link to="/profile" className="hover:underline opacity-90">My Profile</Link></li>
+                <li className="opacity-90">Help & FAQ</li>
+              </ul>
             </div>
           </div>
           
-          <div className="border-t pt-8 text-center text-sm text-muted-foreground">
-            <p className="font-serif">
-              © 2024 BookWise. Powered by Google Books API & AI recommendations.
-            </p>
+          <div className="border-t border-primary-foreground/20 pt-6 text-center text-sm opacity-75">
+            <p>&copy; {new Date().getFullYear()} Mohammad Ali Jinnah University. All rights reserved.</p>
           </div>
         </div>
       </footer>

@@ -69,15 +69,19 @@ export type Database = {
           author: string
           available_copies: number | null
           category_id: string | null
+          course_code: string | null
           cover_url: string | null
           created_at: string | null
           created_by: string | null
+          department: string | null
           description: string | null
           genre: string
           id: string
           isbn: string | null
+          pdf_url: string | null
           published_year: number | null
           rating: number | null
+          semester: number | null
           title: string
           total_copies: number | null
           updated_at: string | null
@@ -86,15 +90,19 @@ export type Database = {
           author: string
           available_copies?: number | null
           category_id?: string | null
+          course_code?: string | null
           cover_url?: string | null
           created_at?: string | null
           created_by?: string | null
+          department?: string | null
           description?: string | null
           genre: string
           id?: string
           isbn?: string | null
+          pdf_url?: string | null
           published_year?: number | null
           rating?: number | null
+          semester?: number | null
           title: string
           total_copies?: number | null
           updated_at?: string | null
@@ -103,15 +111,19 @@ export type Database = {
           author?: string
           available_copies?: number | null
           category_id?: string | null
+          course_code?: string | null
           cover_url?: string | null
           created_at?: string | null
           created_by?: string | null
+          department?: string | null
           description?: string | null
           genre?: string
           id?: string
           isbn?: string | null
+          pdf_url?: string | null
           published_year?: number | null
           rating?: number | null
+          semester?: number | null
           title?: string
           total_copies?: number | null
           updated_at?: string | null
