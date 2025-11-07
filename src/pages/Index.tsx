@@ -49,6 +49,7 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("All Departments");
   const [selectedSemester, setSelectedSemester] = useState("All Semesters");
+  const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -100,10 +101,12 @@ const Index = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) {
+      setIsSearching(false);
       loadBooks();
       return;
     }
     
+    setIsSearching(true);
     setLoading(true);
     try {
       let query = supabase
@@ -175,7 +178,8 @@ const Index = () => {
       <Navigation />
       
       {/* Search Header */}
-      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
+      {!isSearching && (
+        <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
         <div className="container mx-auto px-4 py-4">
           <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
@@ -220,8 +224,10 @@ const Index = () => {
           </form>
         </div>
       </div>
+      )}
 
       {/* Hero Section */}
+      {!isSearching && (
       <div className="relative h-[300px] sm:h-[400px] lg:h-[500px] overflow-hidden">
         <div className="absolute inset-0 bg-gradient-hero opacity-90"></div>
         <img 
@@ -256,6 +262,7 @@ const Index = () => {
           </div>
         </div>
       </div>
+      )}
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-12">

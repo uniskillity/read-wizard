@@ -53,7 +53,7 @@ export const Navigation = () => {
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center space-x-2 transition-transform hover:scale-105">
             <BookOpen className="h-6 w-6 text-primary" />
-            <span className="font-serif text-xl font-bold">BookWise</span>
+            <span className="font-serif text-xl font-bold">MAJU BR</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -65,11 +65,12 @@ export const Navigation = () => {
                   key={to}
                   asChild
                   variant={location.pathname === to ? "default" : "ghost"}
+                  size="icon"
                   className="transition-all"
+                  title={label}
                 >
                   <Link to={to}>
-                    <Icon className="h-4 w-4 mr-2" />
-                    {label}
+                    <Icon className="h-5 w-5" />
                   </Link>
                 </Button>
               );
@@ -79,10 +80,9 @@ export const Navigation = () => {
           <div className="hidden md:flex items-center space-x-2">
             {session ? (
               <>
-                <Button asChild variant="ghost">
+                <Button asChild variant="ghost" size="icon" title="Profile">
                   <Link to="/profile">
-                    <User className="h-4 w-4 mr-2" />
-                    Profile
+                    <User className="h-5 w-5" />
                   </Link>
                 </Button>
                 <Button onClick={handleSignOut} variant="outline">
