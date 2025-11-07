@@ -9,9 +9,23 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, BookOpen, GraduationCap, Library, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { searchBooks, GoogleBook } from "@/lib/googleBooks";
 import heroImage from "@/assets/hero-maju.jpg";
 import { Link } from "react-router-dom";
+
+interface Book {
+  id: string;
+  title: string;
+  author: string;
+  description: string | null;
+  genre: string;
+  rating: number | null;
+  published_year: number | null;
+  cover_url: string | null;
+  department: string | null;
+  semester: number | null;
+  course_code: string | null;
+  pdf_url: string | null;
+}
 
 const DEPARTMENTS = [
   "All Departments",
@@ -30,7 +44,7 @@ const SEMESTERS = ["All Semesters", "1", "2", "3", "4", "5", "6", "7", "8"];
 
 const Index = () => {
   const [session, setSession] = useState<Session | null>(null);
-  const [books, setBooks] = useState<GoogleBook[]>([]);
+  const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("All Departments");
@@ -58,16 +72,20 @@ const Index = () => {
   const loadBooks = async () => {
     setLoading(true);
     try {
-      let query = "";
+      let query = supabase.from("books").select("*");
+      
       if (selectedDepartment !== "All Departments") {
-        query = `${selectedDepartment} textbook`;
-      }
-      if (selectedSemester !== "All Semesters") {
-        query += (query ? " " : "") + `semester ${selectedSemester}`;
+        query = query.eq("department", selectedDepartment);
       }
       
-      const results = query ? await searchBooks(query, 40) : await searchBooks("university textbook computer science", 40);
-      setBooks(results);
+      if (selectedSemester !== "All Semesters") {
+        query = query.eq("semester", parseInt(selectedSemester));
+      }
+      
+      const { data, error } = await query.order("title");
+      
+      if (error) throw error;
+      setBooks(data || []);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -82,18 +100,29 @@ const Index = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Empty search",
-        description: "Please enter a search term",
-      });
+      loadBooks();
       return;
     }
     
     setLoading(true);
     try {
-      const results = await searchBooks(searchQuery, 40);
-      setBooks(results);
+      let query = supabase
+        .from("books")
+        .select("*")
+        .or(`title.ilike.%${searchQuery}%,author.ilike.%${searchQuery}%,course_code.ilike.%${searchQuery}%`);
+      
+      if (selectedDepartment !== "All Departments") {
+        query = query.eq("department", selectedDepartment);
+      }
+      
+      if (selectedSemester !== "All Semesters") {
+        query = query.eq("semester", parseInt(selectedSemester));
+      }
+      
+      const { data, error } = await query.order("title");
+      
+      if (error) throw error;
+      setBooks(data || []);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -103,10 +132,6 @@ const Index = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
   };
 
   const handleSaveBook = async (bookId: string) => {
@@ -225,7 +250,7 @@ const Index = () => {
             <Link to="/trending">
               <Button size="lg" variant="outline" className="w-full sm:w-auto bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border-white/30">
                 <BookOpen className="mr-2 h-5 w-5" />
-                Browse Catalog
+                Browse
               </Button>
             </Link>
           </div>
@@ -237,12 +262,16 @@ const Index = () => {
         <div className="mb-8">
           <h2 className="text-2xl sm:text-3xl font-bold mb-2 flex items-center gap-2">
             <GraduationCap className="h-7 w-7 text-primary" />
-            Academic Resources
+            Course Materials
           </h2>
           <p className="text-muted-foreground">
-            Browse textbooks and materials for your courses
-            {selectedDepartment !== "All Departments" && ` - ${selectedDepartment}`}
-            {selectedSemester !== "All Semesters" && ` - Semester ${selectedSemester}`}
+            {selectedDepartment !== "All Departments" && selectedSemester !== "All Semesters" 
+              ? `${selectedDepartment} - Semester ${selectedSemester}` 
+              : selectedDepartment !== "All Departments" 
+              ? selectedDepartment 
+              : selectedSemester !== "All Semesters"
+              ? `Semester ${selectedSemester}`
+              : "Browse course textbooks and materials"}
           </p>
         </div>
 
@@ -255,8 +284,12 @@ const Index = () => {
         ) : books.length === 0 ? (
           <div className="text-center py-20">
             <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No books found</h3>
-            <p className="text-muted-foreground">Try adjusting your filters or search query</p>
+            <h3 className="text-xl font-semibold mb-2">No books available</h3>
+            <p className="text-muted-foreground">
+              {selectedDepartment !== "All Departments" || selectedSemester !== "All Semesters"
+                ? "No books found for the selected filters"
+                : "No books have been added yet"}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -264,22 +297,16 @@ const Index = () => {
               <Link key={book.id} to={`/book/${book.id}`}>
                 <BookCard
                   id={book.id}
-                  title={book.volumeInfo.title}
-                  author={book.volumeInfo.authors?.join(", ") || "Unknown"}
-                  description={book.volumeInfo.description}
-                  genre={book.volumeInfo.categories?.[0] || "General"}
-                  rating={book.volumeInfo.averageRating || 0}
-                  publishedYear={
-                    book.volumeInfo.publishedDate
-                      ? new Date(book.volumeInfo.publishedDate).getFullYear()
-                      : undefined
-                  }
-                  imageUrl={
-                    book.volumeInfo.imageLinks?.thumbnail ||
-                    book.volumeInfo.imageLinks?.smallThumbnail
-                  }
-                  department={selectedDepartment !== "All Departments" ? selectedDepartment : undefined}
-                  semester={selectedSemester !== "All Semesters" ? parseInt(selectedSemester) : undefined}
+                  title={book.title}
+                  author={book.author}
+                  description={book.description}
+                  genre={book.genre}
+                  rating={book.rating || 0}
+                  publishedYear={book.published_year || undefined}
+                  imageUrl={book.cover_url}
+                  department={book.department || undefined}
+                  semester={book.semester || undefined}
+                  courseCode={book.course_code || undefined}
                   onSave={handleSaveBook}
                 />
               </Link>
@@ -295,10 +322,10 @@ const Index = () => {
             <div>
               <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
                 <GraduationCap className="h-5 w-5" />
-                MAJU Library
+                MAJU BR
               </h3>
               <p className="text-sm opacity-90">
-                Mohammad Ali Jinnah University's comprehensive digital library providing access to academic resources for all students.
+                Mohammad Ali Jinnah University Books Recommendation - Your digital library for course materials and academic resources.
               </p>
             </div>
             
