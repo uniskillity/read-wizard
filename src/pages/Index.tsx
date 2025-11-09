@@ -45,7 +45,7 @@ const SEMESTERS = ["All Semesters", "1", "2", "3", "4", "5", "6", "7", "8"];
 const Index = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [books, setBooks] = useState<Book[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("All Departments");
   const [selectedSemester, setSelectedSemester] = useState("All Semesters");
@@ -67,10 +67,8 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    if (session) {
-      loadBooks();
-    }
-  }, [selectedDepartment, selectedSemester, session]);
+    loadBooks();
+  }, [selectedDepartment, selectedSemester]);
 
   const loadBooks = async () => {
     setLoading(true);
@@ -107,31 +105,28 @@ const Index = () => {
       loadBooks();
       return;
     }
-
+    
     setIsSearching(true);
     setLoading(true);
     try {
       let query = supabase
         .from("books")
-        .select("*");
-
-      const searchPattern = `%${searchQuery.trim()}%`;
-      query = query.or(`title.ilike.${searchPattern},author.ilike.${searchPattern},course_code.ilike.${searchPattern},description.ilike.${searchPattern}`);
-
+        .select("*")
+        .or(`title.ilike.%${searchQuery}%,author.ilike.%${searchQuery}%,course_code.ilike.%${searchQuery}%`);
+      
       if (selectedDepartment !== "All Departments") {
         query = query.eq("department", selectedDepartment);
       }
-
+      
       if (selectedSemester !== "All Semesters") {
         query = query.eq("semester", parseInt(selectedSemester));
       }
-
+      
       const { data, error } = await query.order("title");
-
+      
       if (error) throw error;
       setBooks(data || []);
     } catch (error) {
-      console.error("Search error:", error);
       toast({
         variant: "destructive",
         title: "Search failed",
@@ -140,12 +135,6 @@ const Index = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleClearSearch = () => {
-    setSearchQuery("");
-    setIsSearching(false);
-    loadBooks();
   };
 
   const handleSaveBook = async (bookId: string) => {
@@ -189,7 +178,8 @@ const Index = () => {
       <Navigation />
       
       {/* Search Header */}
-      <div className="sticky top-16 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
+      {!isSearching && (
+        <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
         <div className="container mx-auto px-4 py-4">
           <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
@@ -230,15 +220,11 @@ const Index = () => {
               <Button type="submit" className="w-full sm:w-auto">
                 Search
               </Button>
-              {(isSearching || searchQuery) && (
-                <Button type="button" variant="outline" onClick={handleClearSearch} className="w-full sm:w-auto">
-                  Clear
-                </Button>
-              )}
             </div>
           </form>
         </div>
       </div>
+      )}
 
       {/* Hero Section */}
       {!isSearching && (
@@ -283,14 +269,13 @@ const Index = () => {
         <div className="mb-8">
           <h2 className="text-2xl sm:text-3xl font-bold mb-2 flex items-center gap-2">
             <GraduationCap className="h-7 w-7 text-primary" />
-            {isSearching ? "Search Results" : "Course Materials"}
+            Course Materials
           </h2>
           <p className="text-muted-foreground">
-            {isSearching && searchQuery ? `Search results for "${searchQuery}"` :
-            selectedDepartment !== "All Departments" && selectedSemester !== "All Semesters"
-              ? `${selectedDepartment} - Semester ${selectedSemester}`
-              : selectedDepartment !== "All Departments"
-              ? selectedDepartment
+            {selectedDepartment !== "All Departments" && selectedSemester !== "All Semesters" 
+              ? `${selectedDepartment} - Semester ${selectedSemester}` 
+              : selectedDepartment !== "All Departments" 
+              ? selectedDepartment 
               : selectedSemester !== "All Semesters"
               ? `Semester ${selectedSemester}`
               : "Browse course textbooks and materials"}
@@ -306,19 +291,12 @@ const Index = () => {
         ) : books.length === 0 ? (
           <div className="text-center py-20">
             <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No books found</h3>
-            <p className="text-muted-foreground mb-4">
-              {isSearching && searchQuery
-                ? `No results found for "${searchQuery}"`
-                : selectedDepartment !== "All Departments" || selectedSemester !== "All Semesters"
+            <h3 className="text-xl font-semibold mb-2">No books available</h3>
+            <p className="text-muted-foreground">
+              {selectedDepartment !== "All Departments" || selectedSemester !== "All Semesters"
                 ? "No books found for the selected filters"
                 : "No books have been added yet"}
             </p>
-            {(isSearching || selectedDepartment !== "All Departments" || selectedSemester !== "All Semesters") && (
-              <Button onClick={handleClearSearch} variant="outline">
-                Clear Filters
-              </Button>
-            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
