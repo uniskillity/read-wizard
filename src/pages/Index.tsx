@@ -225,15 +225,14 @@ const Index = () => {
       <Navigation />
       
       {/* Search Header */}
-      {!isSearching && (
-        <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
+      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
         <div className="container mx-auto px-4 py-4">
-          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search for textbooks, course materials..."
+                placeholder="Search for textbooks, course materials, authors..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 w-full"
@@ -264,14 +263,15 @@ const Index = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <Button type="submit" className="w-full sm:w-auto">
-                Search
-              </Button>
+              {searchQuery && (
+                <Button variant="outline" onClick={() => setSearchQuery("")} className="w-full sm:w-auto">
+                  Clear
+                </Button>
+              )}
             </div>
-          </form>
+          </div>
         </div>
       </div>
-      )}
 
       {/* Hero Section */}
       {!isSearching && (
