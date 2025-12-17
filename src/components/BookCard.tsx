@@ -50,17 +50,40 @@ export const BookCard = ({
     onRate?.(id, stars);
   };
 
+  // Generate a placeholder cover based on book title if no image
+  const getPlaceholderCover = () => {
+    const colors = [
+      'from-blue-500 to-blue-700',
+      'from-green-500 to-green-700', 
+      'from-purple-500 to-purple-700',
+      'from-red-500 to-red-700',
+      'from-orange-500 to-orange-700',
+      'from-teal-500 to-teal-700',
+      'from-indigo-500 to-indigo-700',
+      'from-pink-500 to-pink-700',
+    ];
+    const index = title.length % colors.length;
+    return colors[index];
+  };
+
   return (
     <Card className="group h-full overflow-hidden transition-all duration-300 hover:shadow-book hover:-translate-y-1">
-      {imageUrl && (
-        <div className="w-full h-48 overflow-hidden">
+      <div className="w-full h-48 overflow-hidden relative">
+        {imageUrl ? (
           <img 
             src={imageUrl.replace('http:', 'https:')} 
             alt={title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
-        </div>
-      )}
+        ) : (
+          <div className={`w-full h-full bg-gradient-to-br ${getPlaceholderCover()} flex items-center justify-center p-4`}>
+            <div className="text-center text-white">
+              <BookOpen className="h-10 w-10 mx-auto mb-2 opacity-80" />
+              <p className="text-xs font-medium opacity-90 line-clamp-2">{title}</p>
+            </div>
+          </div>
+        )}
+      </div>
       <CardHeader className="space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
