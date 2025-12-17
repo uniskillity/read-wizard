@@ -11,17 +11,35 @@ import { supabase } from "@/integrations/supabase/client";
 import { BookCard } from "@/components/BookCard";
 import { Navigation } from "@/components/Navigation";
 
+interface LocalBook {
+  id: string;
+  title: string;
+  author: string;
+  description?: string;
+  genre: string;
+  cover_url?: string;
+  published_year?: number;
+  rating?: number;
+  department?: string;
+  semester?: number;
+  course_code?: string;
+  isbn?: string;
+  pdf_url?: string;
+}
+
 const BookDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [book, setBook] = useState<GoogleBook | null>(null);
+  const [localBook, setLocalBook] = useState<LocalBook | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [session, setSession] = useState<any>(null);
   const [userRating, setUserRating] = useState<number>(0);
   const [savedBookId, setSavedBookId] = useState<string | null>(null);
   const [recommendedBooks, setRecommendedBooks] = useState<GoogleBook[]>([]);
+  const [localRecommendedBooks, setLocalRecommendedBooks] = useState<LocalBook[]>([]);
   const [showReader, setShowReader] = useState(false);
 
   useEffect(() => {
@@ -38,16 +56,37 @@ const BookDetails = () => {
   }, [id, session]);
 
   useEffect(() => {
-    if (book) {
+    if (localBook) {
+      loadLocalRecommendedBooks();
+    } else if (book) {
       loadRecommendedBooks();
     }
-  }, [book]);
+  }, [book, localBook]);
 
   const loadBook = async () => {
     if (!id) return;
     setLoading(true);
+    
+    // First try to fetch from local Supabase database
+    const { data: localData, error } = await supabase
+      .from("books")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    
+    if (localData) {
+      setLocalBook(localData as LocalBook);
+      setBook(null);
+      setLoading(false);
+      return;
+    }
+    
+    // If not found locally, try Google Books API
     const data = await getBookDetails(id);
-    setBook(data);
+    if (data && data.volumeInfo) {
+      setBook(data);
+      setLocalBook(null);
+    }
     setLoading(false);
   };
 
@@ -73,6 +112,20 @@ const BookDetails = () => {
     const category = book.volumeInfo.categories?.[0] || "fiction";
     const books = await searchBooks(category, 8);
     setRecommendedBooks(books.filter(b => b.id !== id));
+  };
+
+  const loadLocalRecommendedBooks = async () => {
+    if (!localBook) return;
+    const { data } = await supabase
+      .from("books")
+      .select("*")
+      .eq("department", localBook.department)
+      .neq("id", id)
+      .limit(8);
+    
+    if (data) {
+      setLocalRecommendedBooks(data as LocalBook[]);
+    }
   };
 
   const handleSave = async () => {
@@ -164,6 +217,11 @@ const BookDetails = () => {
   };
 
   const handleRead = async () => {
+    if (localBook?.pdf_url) {
+      window.open(localBook.pdf_url, "_blank");
+      return;
+    }
+    
     if (book?.accessInfo?.embeddable || book?.accessInfo?.webReaderLink) {
       setShowReader(true);
       
@@ -194,11 +252,14 @@ const BookDetails = () => {
   };
 
   const handleShare = async () => {
-    if (navigator.share && book) {
+    const title = localBook?.title || book?.volumeInfo.title;
+    const author = localBook?.author || book?.volumeInfo.authors?.join(", ");
+    
+    if (navigator.share && title) {
       try {
         await navigator.share({
-          title: book.volumeInfo.title,
-          text: `Check out "${book.volumeInfo.title}" by ${book.volumeInfo.authors?.join(", ")}`,
+          title: title,
+          text: `Check out "${title}" by ${author}`,
           url: window.location.href,
         });
       } catch (error) {
@@ -214,6 +275,15 @@ const BookDetails = () => {
   };
 
   const handleDownload = () => {
+    if (localBook?.pdf_url) {
+      window.open(localBook.pdf_url, "_blank");
+      toast({
+        title: "Opening PDF",
+        description: "The PDF version is now opening",
+      });
+      return;
+    }
+    
     if (book?.accessInfo?.pdf?.isAvailable && book?.accessInfo?.pdf?.downloadLink) {
       window.open(book.accessInfo.pdf.downloadLink, "_blank");
       toast({
@@ -243,7 +313,7 @@ const BookDetails = () => {
     );
   }
 
-  if (!book) {
+  if (!book && !localBook) {
     return (
       <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
         <div className="text-center">
@@ -253,6 +323,15 @@ const BookDetails = () => {
       </div>
     );
   }
+
+  // Get display values from either local or Google book
+  const title = localBook?.title || book?.volumeInfo.title || "Unknown Title";
+  const author = localBook?.author || book?.volumeInfo.authors?.join(", ") || "Unknown Author";
+  const description = localBook?.description || book?.volumeInfo.description;
+  const imageUrl = localBook?.cover_url || book?.volumeInfo.imageLinks?.thumbnail?.replace('http:', 'https:') || "/placeholder.svg";
+  const genre = localBook?.genre || book?.volumeInfo.categories?.[0];
+  const rating = localBook?.rating || book?.volumeInfo.averageRating;
+  const publishedYear = localBook?.published_year || (book?.volumeInfo.publishedDate ? new Date(book.volumeInfo.publishedDate).getFullYear() : null);
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -272,8 +351,8 @@ const BookDetails = () => {
             <Card className="overflow-hidden shadow-book">
               <CardContent className="p-0">
                 <img
-                  src={book.volumeInfo.imageLinks?.thumbnail?.replace('http:', 'https:') || "/placeholder.svg"}
-                  alt={book.volumeInfo.title}
+                  src={imageUrl}
+                  alt={title}
                   className="w-full h-auto object-cover"
                 />
               </CardContent>
@@ -282,7 +361,7 @@ const BookDetails = () => {
             <div className="mt-6 space-y-3">
               <Button onClick={handleRead} className="w-full" size="lg">
                 <BookOpen className="mr-2 h-5 w-5" />
-                {book.accessInfo?.embeddable ? "Read Online" : "Read Preview"}
+                {localBook?.pdf_url ? "Read PDF" : (book?.accessInfo?.embeddable ? "Read Online" : "Read Preview")}
               </Button>
               <Button onClick={handleSave} variant="outline" className="w-full" size="lg">
                 <Heart className={`mr-2 h-5 w-5 ${isSaved ? "fill-primary" : ""}`} />
@@ -295,16 +374,20 @@ const BookDetails = () => {
                 </Button>
                 <Button onClick={handleDownload} variant="outline" className="flex-1">
                   <Download className="mr-2 h-4 w-4" />
-                  {book.accessInfo?.pdf?.isAvailable || book.accessInfo?.epub?.isAvailable ? "Download" : "View More"}
+                  {localBook?.pdf_url || book?.accessInfo?.pdf?.isAvailable || book?.accessInfo?.epub?.isAvailable ? "Download" : "View More"}
                 </Button>
               </div>
-              {(book.accessInfo?.pdf?.isAvailable || book.accessInfo?.epub?.isAvailable) && (
+              {(localBook?.pdf_url || book?.accessInfo?.pdf?.isAvailable || book?.accessInfo?.epub?.isAvailable) && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary p-2 rounded">
                   <FileText className="h-4 w-4" />
                   <span>
-                    Available: {book.accessInfo?.pdf?.isAvailable && "PDF"} 
-                    {book.accessInfo?.pdf?.isAvailable && book.accessInfo?.epub?.isAvailable && " & "}
-                    {book.accessInfo?.epub?.isAvailable && "EPUB"}
+                    Available: {localBook?.pdf_url ? "PDF" : (
+                      <>
+                        {book?.accessInfo?.pdf?.isAvailable && "PDF"} 
+                        {book?.accessInfo?.pdf?.isAvailable && book?.accessInfo?.epub?.isAvailable && " & "}
+                        {book?.accessInfo?.epub?.isAvailable && "EPUB"}
+                      </>
+                    )}
                   </span>
                 </div>
               )}
@@ -320,44 +403,62 @@ const BookDetails = () => {
           <div className="md:col-span-2 space-y-6">
             <div>
               <h1 className="text-4xl font-serif font-bold mb-2">
-                {book.volumeInfo.title}
+                {title}
               </h1>
               <p className="text-xl text-muted-foreground mb-4">
-                by {book.volumeInfo.authors?.join(", ") || "Unknown Author"}
+                by {author}
               </p>
 
               <div className="flex items-center gap-2 sm:gap-4 flex-wrap text-sm sm:text-base">
-                {book.volumeInfo.averageRating && (
+                {rating && (
                   <div className="flex items-center gap-1">
                     <Star className="h-4 w-4 sm:h-5 sm:w-5 fill-primary text-primary" />
-                    <span className="font-medium">{book.volumeInfo.averageRating}</span>
+                    <span className="font-medium">{rating}</span>
                     <span className="text-xs text-muted-foreground">(avg)</span>
                   </div>
                 )}
-                {book.volumeInfo.pageCount && (
+                {book?.volumeInfo.pageCount && (
                   <span className="text-muted-foreground">
                     {book.volumeInfo.pageCount} pages
                   </span>
                 )}
-                {book.volumeInfo.publishedDate && (
+                {publishedYear && (
                   <span className="text-muted-foreground">
-                    Published: {book.volumeInfo.publishedDate}
+                    Published: {publishedYear}
                   </span>
                 )}
-                {book.volumeInfo.publisher && (
+                {book?.volumeInfo.publisher && (
                   <span className="text-muted-foreground">
                     {book.volumeInfo.publisher}
                   </span>
                 )}
-                {book.volumeInfo.language && (
+                {book?.volumeInfo.language && (
                   <Badge variant="outline">{book.volumeInfo.language.toUpperCase()}</Badge>
                 )}
               </div>
 
-              {book.volumeInfo.industryIdentifiers && book.volumeInfo.industryIdentifiers.length > 0 && (
-                <div className="flex gap-2 text-sm text-muted-foreground flex-wrap">
-                  {book.volumeInfo.industryIdentifiers.map((id, idx) => (
-                    <span key={idx}>{id.type}: {id.identifier}</span>
+              {/* Local book specific info */}
+              {localBook && (
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {localBook.department && (
+                    <Badge variant="secondary">{localBook.department}</Badge>
+                  )}
+                  {localBook.semester && (
+                    <Badge variant="outline">Semester {localBook.semester}</Badge>
+                  )}
+                  {localBook.course_code && (
+                    <Badge variant="outline">{localBook.course_code}</Badge>
+                  )}
+                  {localBook.isbn && (
+                    <span className="text-sm text-muted-foreground">ISBN: {localBook.isbn}</span>
+                  )}
+                </div>
+              )}
+
+              {book?.volumeInfo.industryIdentifiers && book.volumeInfo.industryIdentifiers.length > 0 && (
+                <div className="flex gap-2 text-sm text-muted-foreground flex-wrap mt-2">
+                  {book.volumeInfo.industryIdentifiers.map((identifier, idx) => (
+                    <span key={idx}>{identifier.type}: {identifier.identifier}</span>
                   ))}
                 </div>
               )}
@@ -389,9 +490,10 @@ const BookDetails = () => {
               </div>
             </div>
 
-            {book.volumeInfo.categories && (
+            {genre && (
               <div className="flex gap-2 flex-wrap">
-                {book.volumeInfo.categories.map((category) => (
+                <Badge variant="secondary">{genre}</Badge>
+                {book?.volumeInfo.categories?.slice(1).map((category) => (
                   <Badge key={category} variant="secondary">
                     {category}
                   </Badge>
@@ -399,19 +501,50 @@ const BookDetails = () => {
               </div>
             )}
 
-            {book.volumeInfo.description && (
+            {description && (
               <Card>
                 <CardContent className="pt-6">
                   <h2 className="text-2xl font-serif font-bold mb-4">About This Book</h2>
                   <div
                     className="text-muted-foreground leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: book.volumeInfo.description }}
+                    dangerouslySetInnerHTML={{ __html: description }}
                   />
                 </CardContent>
               </Card>
             )}
 
-            {recommendedBooks.length > 0 && (
+            {/* Local recommended books */}
+            {localRecommendedBooks.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-serif font-bold mb-4">More from {localBook?.department}</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {localRecommendedBooks.slice(0, 4).map((recBook) => (
+                    <div 
+                      key={recBook.id} 
+                      onClick={() => navigate(`/book/${recBook.id}`)}
+                      className="cursor-pointer"
+                    >
+                      <BookCard
+                        id={recBook.id}
+                        title={recBook.title}
+                        author={recBook.author}
+                        description={recBook.description}
+                        genre={recBook.genre}
+                        rating={recBook.rating || 0}
+                        publishedYear={recBook.published_year}
+                        imageUrl={recBook.cover_url}
+                        department={recBook.department}
+                        semester={recBook.semester}
+                        courseCode={recBook.course_code}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Google Books recommended */}
+            {recommendedBooks.length > 0 && !localBook && (
               <div>
                 <h2 className="text-2xl font-serif font-bold mb-4">Recommended Books</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -445,28 +578,30 @@ const BookDetails = () => {
       </div>
 
       {/* Embedded Book Reader Dialog */}
-      <Dialog open={showReader} onOpenChange={setShowReader}>
-        <DialogContent className="max-w-5xl h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>{book.volumeInfo.title}</DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 h-full">
-            {book.accessInfo?.webReaderLink ? (
-              <iframe
-                src={book.accessInfo.webReaderLink}
-                className="w-full h-full rounded border"
-                title="Book Reader"
-              />
-            ) : (
-              <iframe
-                src={`https://books.google.com/books?id=${id}&lpg=PP1&pg=PP1&output=embed`}
-                className="w-full h-full rounded border"
-                title="Book Reader"
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {book && (
+        <Dialog open={showReader} onOpenChange={setShowReader}>
+          <DialogContent className="max-w-5xl h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>{title}</DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 h-full">
+              {book.accessInfo?.webReaderLink ? (
+                <iframe
+                  src={book.accessInfo.webReaderLink}
+                  className="w-full h-full rounded border"
+                  title="Book Reader"
+                />
+              ) : (
+                <iframe
+                  src={`https://books.google.com/books?id=${id}&lpg=PP1&pg=PP1&output=embed`}
+                  className="w-full h-full rounded border"
+                  title="Book Reader"
+                />
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
