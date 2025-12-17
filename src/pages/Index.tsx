@@ -66,9 +66,24 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Load books when filters change or on initial load
   useEffect(() => {
     loadBooks();
   }, [selectedDepartment, selectedSemester]);
+
+  // Live search as user types
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery.trim()) {
+        performSearch();
+      } else {
+        setIsSearching(false);
+        loadBooks();
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
 
   const loadBooks = async () => {
     setLoading(true);
@@ -91,6 +106,38 @@ const Index = () => {
       toast({
         variant: "destructive",
         title: "Error loading books",
+        description: "Please try again later.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const performSearch = async () => {
+    setIsSearching(true);
+    setLoading(true);
+    try {
+      let query = supabase
+        .from("books")
+        .select("*")
+        .or(`title.ilike.%${searchQuery}%,author.ilike.%${searchQuery}%,course_code.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,genre.ilike.%${searchQuery}%`);
+      
+      if (selectedDepartment !== "All Departments") {
+        query = query.eq("department", selectedDepartment);
+      }
+      
+      if (selectedSemester !== "All Semesters") {
+        query = query.eq("semester", parseInt(selectedSemester));
+      }
+      
+      const { data, error } = await query.order("title");
+      
+      if (error) throw error;
+      setBooks(data || []);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Search failed",
         description: "Please try again later.",
       });
     } finally {
