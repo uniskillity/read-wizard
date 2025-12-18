@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Heart, History, Sparkles, TrendingUp, User, Menu, X, Shield, BarChart, BookMarked } from "lucide-react";
+import { BookOpen, Heart, History, Sparkles, TrendingUp, User, Menu, X, Shield, BarChart, BookMarked, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { useUserRole } from "@/hooks/useUserRole";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const Navigation = () => {
   const location = useLocation();
@@ -48,31 +49,37 @@ export const Navigation = () => {
   const allNavLinks = [...navLinks, ...staffLinks];
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-50 w-full border-b glass">
       <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2 transition-transform hover:scale-105">
-            <BookOpen className="h-6 w-6 text-primary" />
-            <span className="font-serif text-xl font-bold">MAJU BR</span>
+        <div className="flex h-14 items-center justify-between">
+          <Link to="/" className="flex items-center space-x-2 transition-all hover:scale-105 hover:opacity-80">
+            <div className="p-1.5 rounded-lg bg-primary">
+              <BookOpen className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <span className="font-serif text-lg font-bold hidden sm:inline">MAJU BR</span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
             {allNavLinks.map(({ to, label, icon: Icon, requireAuth }) => {
               if (requireAuth && !session) return null;
+              const isActive = location.pathname === to;
               return (
-                <Button
-                  key={to}
-                  asChild
-                  variant={location.pathname === to ? "default" : "ghost"}
-                  size="icon"
-                  className="transition-all"
-                  title={label}
-                >
-                  <Link to={to}>
-                    <Icon className="h-5 w-5" />
-                  </Link>
-                </Button>
+                <Tooltip key={to}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      asChild
+                      variant={isActive ? "default" : "ghost"}
+                      size="sm"
+                      className={`transition-all h-9 w-9 p-0 ${isActive ? "shadow-sm" : "hover:bg-muted"}`}
+                    >
+                      <Link to={to}>
+                        <Icon className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">{label}</TooltipContent>
+                </Tooltip>
               );
             })}
           </div>
@@ -80,17 +87,23 @@ export const Navigation = () => {
           <div className="hidden md:flex items-center space-x-2">
             {session ? (
               <>
-                <Button asChild variant="ghost" size="icon" title="Profile">
-                  <Link to="/profile">
-                    <User className="h-5 w-5" />
-                  </Link>
-                </Button>
-                <Button onClick={handleSignOut} variant="outline">
-                  Sign Out
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button asChild variant="ghost" size="sm" className="h-9 w-9 p-0">
+                      <Link to="/profile">
+                        <User className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">Profile</TooltipContent>
+                </Tooltip>
+                <Button onClick={handleSignOut} variant="outline" size="sm" className="h-9 gap-2">
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span className="hidden lg:inline">Sign Out</span>
                 </Button>
               </>
             ) : (
-              <Button asChild>
+              <Button asChild size="sm" className="h-9">
                 <Link to="/">Sign In</Link>
               </Button>
             )}

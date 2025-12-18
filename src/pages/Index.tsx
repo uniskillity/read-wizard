@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { Auth } from "@/components/Auth";
@@ -7,10 +7,13 @@ import { BookCard } from "@/components/BookCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, GraduationCap, Library, FileText } from "lucide-react";
+import { Search, BookOpen, GraduationCap, Library, FileText, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import heroImage from "@/assets/hero-maju.jpg";
 import { Link } from "react-router-dom";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
+import { StatsBar } from "@/components/StatsBar";
+import { Badge } from "@/components/ui/badge";
 
 interface Book {
   id: string;
@@ -225,25 +228,37 @@ const Index = () => {
       <Navigation />
       
       {/* Search Header */}
-      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
-        <div className="container mx-auto px-4 py-4">
+      <div className="sticky top-16 z-30 glass border-b">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <div className="flex-1 relative group">
+              {loading && searchQuery ? (
+                <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
+              ) : (
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              )}
               <Input
                 type="search"
-                placeholder="Search for textbooks, course materials, authors..."
+                placeholder="Search books, authors, course codes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-full"
+                className="pl-10 pr-10 w-full transition-all focus:ring-2 focus:ring-primary/20"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
             <div className="flex gap-2 flex-col sm:flex-row">
               <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectTrigger className="w-full sm:w-[180px] bg-background">
                   <SelectValue placeholder="Department" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-popover">
                   {DEPARTMENTS.map((dept) => (
                     <SelectItem key={dept} value={dept}>
                       {dept}
@@ -252,24 +267,61 @@ const Index = () => {
                 </SelectContent>
               </Select>
               <Select value={selectedSemester} onValueChange={setSelectedSemester}>
-                <SelectTrigger className="w-full sm:w-[150px]">
+                <SelectTrigger className="w-full sm:w-[130px] bg-background">
                   <SelectValue placeholder="Semester" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-popover">
                   {SEMESTERS.map((sem) => (
                     <SelectItem key={sem} value={sem}>
-                      {sem}
+                      {sem === "All Semesters" ? sem : `Semester ${sem}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {searchQuery && (
-                <Button variant="outline" onClick={() => setSearchQuery("")} className="w-full sm:w-auto">
-                  Clear
-                </Button>
-              )}
             </div>
           </div>
+          {/* Active filters display */}
+          {(selectedDepartment !== "All Departments" || selectedSemester !== "All Semesters" || searchQuery) && (
+            <div className="flex items-center gap-2 mt-3 flex-wrap">
+              <span className="text-xs text-muted-foreground">Active:</span>
+              {searchQuery && (
+                <Badge variant="secondary" className="text-xs gap-1">
+                  "{searchQuery}"
+                  <button onClick={() => setSearchQuery("")} className="ml-1 hover:text-destructive">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {selectedDepartment !== "All Departments" && (
+                <Badge variant="outline" className="text-xs gap-1">
+                  {selectedDepartment}
+                  <button onClick={() => setSelectedDepartment("All Departments")} className="ml-1 hover:text-destructive">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {selectedSemester !== "All Semesters" && (
+                <Badge variant="outline" className="text-xs gap-1">
+                  Semester {selectedSemester}
+                  <button onClick={() => setSelectedSemester("All Semesters")} className="ml-1 hover:text-destructive">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs h-6 px-2"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedDepartment("All Departments");
+                  setSelectedSemester("All Semesters");
+                }}
+              >
+                Clear all
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -312,43 +364,77 @@ const Index = () => {
       )}
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-12">
-        <div className="mb-8">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-2 flex items-center gap-2">
-            <GraduationCap className="h-7 w-7 text-primary" />
-            Course Materials
-          </h2>
-          <p className="text-muted-foreground">
-            {selectedDepartment !== "All Departments" && selectedSemester !== "All Semesters" 
-              ? `${selectedDepartment} - Semester ${selectedSemester}` 
-              : selectedDepartment !== "All Departments" 
-              ? selectedDepartment 
-              : selectedSemester !== "All Semesters"
-              ? `Semester ${selectedSemester}`
-              : "Browse course textbooks and materials"}
-          </p>
+      <main className="container mx-auto px-4 py-8">
+        {/* Stats Section */}
+        {!isSearching && (
+          <div className="mb-8">
+            <StatsBar />
+          </div>
+        )}
+
+        <div className="mb-6">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                <GraduationCap className="h-6 w-6 text-primary" />
+                {isSearching ? "Search Results" : "Course Materials"}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                {isSearching 
+                  ? `Found ${books.length} book${books.length !== 1 ? 's' : ''} for "${searchQuery}"`
+                  : selectedDepartment !== "All Departments" && selectedSemester !== "All Semesters" 
+                    ? `${selectedDepartment} - Semester ${selectedSemester}` 
+                    : selectedDepartment !== "All Departments" 
+                      ? selectedDepartment 
+                      : selectedSemester !== "All Semesters"
+                        ? `Semester ${selectedSemester}`
+                        : `${books.length} books available`}
+              </p>
+            </div>
+          </div>
         </div>
 
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="h-[400px] bg-muted animate-pulse rounded-lg"></div>
+              <SkeletonCard key={i} />
             ))}
           </div>
         ) : books.length === 0 ? (
-          <div className="text-center py-20">
-            <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No books available</h3>
-            <p className="text-muted-foreground">
-              {selectedDepartment !== "All Departments" || selectedSemester !== "All Semesters"
-                ? "No books found for the selected filters"
-                : "No books have been added yet"}
+          <div className="text-center py-20 animate-fade-in">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-muted mb-4">
+              <FileText className="h-10 w-10 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">No books found</h3>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+              {searchQuery 
+                ? `No books match "${searchQuery}". Try different keywords or clear filters.`
+                : selectedDepartment !== "All Departments" || selectedSemester !== "All Semesters"
+                  ? "No books found for the selected filters. Try adjusting your selection."
+                  : "No books have been added to the library yet."}
             </p>
+            {(searchQuery || selectedDepartment !== "All Departments" || selectedSemester !== "All Semesters") && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedDepartment("All Departments");
+                  setSelectedSemester("All Semesters");
+                }}
+              >
+                Clear all filters
+              </Button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {books.map((book) => (
-              <Link key={book.id} to={`/book/${book.id}`}>
+            {books.map((book, index) => (
+              <Link 
+                key={book.id} 
+                to={`/book/${book.id}`}
+                className="animate-fade-in"
+                style={{ animationDelay: `${Math.min(index * 50, 400)}ms` }}
+              >
                 <BookCard
                   id={book.id}
                   title={book.title}
@@ -361,6 +447,7 @@ const Index = () => {
                   department={book.department || undefined}
                   semester={book.semester || undefined}
                   courseCode={book.course_code || undefined}
+                  pdfUrl={book.pdf_url || undefined}
                   onSave={handleSaveBook}
                 />
               </Link>
