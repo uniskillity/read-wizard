@@ -116,15 +116,45 @@ const BookDetails = () => {
 
   const loadLocalRecommendedBooks = async () => {
     if (!localBook) return;
-    const { data } = await supabase
+    
+    // First, try to get books from same department AND same semester
+    const { data: sameSemesterBooks } = await supabase
+      .from("books")
+      .select("*")
+      .eq("department", localBook.department)
+      .eq("semester", localBook.semester)
+      .neq("id", id)
+      .limit(8);
+    
+    if (sameSemesterBooks && sameSemesterBooks.length >= 4) {
+      // Sort by genre similarity - prioritize same genre first
+      const sortedBooks = (sameSemesterBooks as LocalBook[]).sort((a, b) => {
+        const aGenreMatch = a.genre?.toLowerCase() === localBook.genre?.toLowerCase() ? 1 : 0;
+        const bGenreMatch = b.genre?.toLowerCase() === localBook.genre?.toLowerCase() ? 1 : 0;
+        return bGenreMatch - aGenreMatch;
+      });
+      setLocalRecommendedBooks(sortedBooks);
+      return;
+    }
+    
+    // If not enough books in same semester, also include books from same department
+    const { data: sameDeptBooks } = await supabase
       .from("books")
       .select("*")
       .eq("department", localBook.department)
       .neq("id", id)
       .limit(8);
     
-    if (data) {
-      setLocalRecommendedBooks(data as LocalBook[]);
+    if (sameDeptBooks) {
+      // Sort: same semester first, then by genre match
+      const sortedBooks = (sameDeptBooks as LocalBook[]).sort((a, b) => {
+        const aSemesterMatch = a.semester === localBook.semester ? 2 : 0;
+        const bSemesterMatch = b.semester === localBook.semester ? 2 : 0;
+        const aGenreMatch = a.genre?.toLowerCase() === localBook.genre?.toLowerCase() ? 1 : 0;
+        const bGenreMatch = b.genre?.toLowerCase() === localBook.genre?.toLowerCase() ? 1 : 0;
+        return (bSemesterMatch + bGenreMatch) - (aSemesterMatch + aGenreMatch);
+      });
+      setLocalRecommendedBooks(sortedBooks);
     }
   };
 
@@ -516,7 +546,17 @@ const BookDetails = () => {
             {/* Local recommended books */}
             {localRecommendedBooks.length > 0 && (
               <div>
-                <h2 className="text-2xl font-serif font-bold mb-4">More from {localBook?.department}</h2>
+                <h2 className="text-2xl font-serif font-bold mb-4">
+                  Related {localBook?.genre} Books
+                  {localBook?.semester && (
+                    <span className="text-base font-normal text-muted-foreground ml-2">
+                      (Semester {localBook.semester})
+                    </span>
+                  )}
+                </h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  More books from {localBook?.department} department
+                </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {localRecommendedBooks.slice(0, 4).map((recBook) => (
                     <div 
