@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { getBookDetails, GoogleBook, searchBooks } from "@/lib/googleBooks";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, BookOpen, Heart, Star, Share2, Download, Trash2, FileText } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ArrowLeft, BookOpen, Heart, Star, Share2, Download, Trash2, FileText, Calendar, Building2, GraduationCap, Hash, Loader2, ExternalLink, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BookCard } from "@/components/BookCard";
@@ -337,18 +339,60 @@ const BookDetails = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
-        <p className="text-muted-foreground">Loading book details...</p>
+      <div className="min-h-screen bg-gradient-subtle">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8">
+          <Skeleton className="h-10 w-24 mb-6" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="md:col-span-1">
+              <Skeleton className="aspect-[2/3] w-full rounded-lg" />
+              <div className="mt-6 space-y-3">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <div className="flex gap-3">
+                  <Skeleton className="h-10 flex-1" />
+                  <Skeleton className="h-10 flex-1" />
+                </div>
+              </div>
+            </div>
+            <div className="md:col-span-2 space-y-6">
+              <div>
+                <Skeleton className="h-10 w-3/4 mb-2" />
+                <Skeleton className="h-6 w-1/2 mb-4" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-5 w-20" />
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-5 w-28" />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-6 w-24" />
+              </div>
+              <Skeleton className="h-48 w-full rounded-lg" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!book && !localBook) {
     return (
-      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground mb-4">Book not found</p>
-          <Button onClick={() => navigate("/")}>Go Back</Button>
+      <div className="min-h-screen bg-gradient-subtle">
+        <Navigation />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center animate-fade-in">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
+              <BookOpen className="h-10 w-10 text-muted-foreground" />
+            </div>
+            <h2 className="text-2xl font-serif font-bold mb-2">Book not found</h2>
+            <p className="text-muted-foreground mb-6">The book you're looking for doesn't exist or has been removed.</p>
+            <Button onClick={() => navigate("/")} size="lg">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Library
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -366,52 +410,108 @@ const BookDetails = () => {
   return (
     <div className="min-h-screen bg-gradient-subtle">
       <Navigation />
-      <div className="container mx-auto px-4 py-8">
+      
+      {/* Breadcrumb */}
+      <div className="container mx-auto px-4 pt-4">
+        <nav className="flex items-center gap-1 text-sm text-muted-foreground animate-fade-in">
+          <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
+          <ChevronRight className="h-4 w-4" />
+          {localBook?.department && (
+            <>
+              <span>{localBook.department}</span>
+              <ChevronRight className="h-4 w-4" />
+            </>
+          )}
+          <span className="text-foreground font-medium truncate max-w-[200px]">{title}</span>
+        </nav>
+      </div>
+      
+      <div className="container mx-auto px-4 py-6">
         <Button
           variant="ghost"
           onClick={() => navigate(-1)}
-          className="mb-6 animate-fade-in"
+          className="mb-6 animate-fade-in hover:bg-secondary/80 group"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
           Back
         </Button>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-slide-up">
           <div className="md:col-span-1">
-            <Card className="overflow-hidden shadow-book">
-              <CardContent className="p-0">
+            <Card className="overflow-hidden shadow-book group">
+              <CardContent className="p-0 relative">
                 <img
                   src={imageUrl}
                   alt={title}
-                  className="w-full h-auto object-cover"
+                  className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/placeholder.svg";
+                  }}
                 />
+                {localBook?.pdf_url && (
+                  <div className="absolute top-3 right-3">
+                    <Badge className="bg-primary/90 backdrop-blur-sm">
+                      <FileText className="h-3 w-3 mr-1" />
+                      PDF Available
+                    </Badge>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
             <div className="mt-6 space-y-3">
-              <Button onClick={handleRead} className="w-full" size="lg">
-                <BookOpen className="mr-2 h-5 w-5" />
+              <Button onClick={handleRead} className="w-full group" size="lg">
+                <BookOpen className="mr-2 h-5 w-5 transition-transform group-hover:scale-110" />
                 {localBook?.pdf_url ? "Read PDF" : (book?.accessInfo?.embeddable ? "Read Online" : "Read Preview")}
               </Button>
-              <Button onClick={handleSave} variant="outline" className="w-full" size="lg">
-                <Heart className={`mr-2 h-5 w-5 ${isSaved ? "fill-primary" : ""}`} />
-                {isSaved ? "Saved" : "Save for Later"}
-              </Button>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    onClick={handleSave} 
+                    variant={isSaved ? "secondary" : "outline"} 
+                    className="w-full group transition-all" 
+                    size="lg"
+                  >
+                    <Heart className={`mr-2 h-5 w-5 transition-all ${isSaved ? "fill-primary text-primary scale-110" : "group-hover:scale-110"}`} />
+                    {isSaved ? "Saved to Library" : "Save for Later"}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isSaved ? "Remove from your saved books" : "Add to your reading list"}
+                </TooltipContent>
+              </Tooltip>
+              
               <div className="flex gap-3">
-                <Button onClick={handleShare} variant="outline" className="flex-1">
-                  <Share2 className="mr-2 h-4 w-4" />
-                  Share
-                </Button>
-                <Button onClick={handleDownload} variant="outline" className="flex-1">
-                  <Download className="mr-2 h-4 w-4" />
-                  {localBook?.pdf_url || book?.accessInfo?.pdf?.isAvailable || book?.accessInfo?.epub?.isAvailable ? "Download" : "View More"}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button onClick={handleShare} variant="outline" className="flex-1 group">
+                      <Share2 className="mr-2 h-4 w-4 transition-transform group-hover:scale-110" />
+                      Share
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Share this book with others</TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button onClick={handleDownload} variant="outline" className="flex-1 group">
+                      <Download className="mr-2 h-4 w-4 transition-transform group-hover:translate-y-0.5" />
+                      {localBook?.pdf_url || book?.accessInfo?.pdf?.isAvailable || book?.accessInfo?.epub?.isAvailable ? "Download" : "View More"}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {localBook?.pdf_url ? "Download PDF" : "View more options"}
+                  </TooltipContent>
+                </Tooltip>
               </div>
+              
               {(localBook?.pdf_url || book?.accessInfo?.pdf?.isAvailable || book?.accessInfo?.epub?.isAvailable) && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary p-2 rounded">
-                  <FileText className="h-4 w-4" />
-                  <span>
-                    Available: {localBook?.pdf_url ? "PDF" : (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/50 backdrop-blur-sm p-3 rounded-lg border border-border/50">
+                  <FileText className="h-4 w-4 text-primary" />
+                  <span className="font-medium">
+                    Available formats: {localBook?.pdf_url ? "PDF" : (
                       <>
                         {book?.accessInfo?.pdf?.isAvailable && "PDF"} 
                         {book?.accessInfo?.pdf?.isAvailable && book?.accessInfo?.epub?.isAvailable && " & "}
@@ -421,8 +521,9 @@ const BookDetails = () => {
                   </span>
                 </div>
               )}
+              
               {isSaved && (
-                <Button onClick={handleSave} variant="destructive" className="w-full" size="lg">
+                <Button onClick={handleSave} variant="ghost" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10" size="lg">
                   <Trash2 className="mr-2 h-5 w-5" />
                   Remove from Library
                 </Button>
@@ -432,111 +533,172 @@ const BookDetails = () => {
 
           <div className="md:col-span-2 space-y-6">
             <div>
-              <h1 className="text-4xl font-serif font-bold mb-2">
+              <h1 className="text-3xl sm:text-4xl font-serif font-bold mb-2 text-balance leading-tight">
                 {title}
               </h1>
-              <p className="text-xl text-muted-foreground mb-4">
-                by {author}
+              <p className="text-lg sm:text-xl text-muted-foreground mb-4">
+                by <span className="text-foreground font-medium">{author}</span>
               </p>
 
-              <div className="flex items-center gap-2 sm:gap-4 flex-wrap text-sm sm:text-base">
+              {/* Quick Stats */}
+              <div className="flex items-center gap-3 sm:gap-4 flex-wrap text-sm">
                 {rating && (
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 sm:h-5 sm:w-5 fill-primary text-primary" />
-                    <span className="font-medium">{rating}</span>
-                    <span className="text-xs text-muted-foreground">(avg)</span>
-                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-full cursor-default">
+                        <Star className="h-4 w-4 fill-primary text-primary" />
+                        <span className="font-semibold text-primary">{rating.toFixed(1)}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>Average rating</TooltipContent>
+                  </Tooltip>
                 )}
                 {book?.volumeInfo.pageCount && (
-                  <span className="text-muted-foreground">
-                    {book.volumeInfo.pageCount} pages
-                  </span>
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <BookOpen className="h-4 w-4" />
+                    <span>{book.volumeInfo.pageCount} pages</span>
+                  </div>
                 )}
                 {publishedYear && (
-                  <span className="text-muted-foreground">
-                    Published: {publishedYear}
-                  </span>
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    <span>{publishedYear}</span>
+                  </div>
                 )}
                 {book?.volumeInfo.publisher && (
-                  <span className="text-muted-foreground">
+                  <span className="text-muted-foreground hidden sm:inline">
                     {book.volumeInfo.publisher}
                   </span>
                 )}
                 {book?.volumeInfo.language && (
-                  <Badge variant="outline">{book.volumeInfo.language.toUpperCase()}</Badge>
+                  <Badge variant="outline" className="uppercase">{book.volumeInfo.language}</Badge>
                 )}
               </div>
 
-              {/* Local book specific info */}
+              {/* Local book specific info - Enhanced */}
               {localBook && (
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {localBook.department && (
-                    <Badge variant="secondary">{localBook.department}</Badge>
-                  )}
-                  {localBook.semester && (
-                    <Badge variant="outline">Semester {localBook.semester}</Badge>
-                  )}
-                  {localBook.course_code && (
-                    <Badge variant="outline">{localBook.course_code}</Badge>
-                  )}
-                  {localBook.isbn && (
-                    <span className="text-sm text-muted-foreground">ISBN: {localBook.isbn}</span>
-                  )}
-                </div>
+                <Card className="mt-4 bg-secondary/30 border-border/50">
+                  <CardContent className="p-4">
+                    <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">Course Information</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {localBook.department && (
+                        <div className="flex items-center gap-2">
+                          <div className="p-2 bg-primary/10 rounded-lg">
+                            <Building2 className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Department</p>
+                            <p className="text-sm font-medium">{localBook.department}</p>
+                          </div>
+                        </div>
+                      )}
+                      {localBook.semester && (
+                        <div className="flex items-center gap-2">
+                          <div className="p-2 bg-primary/10 rounded-lg">
+                            <GraduationCap className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Semester</p>
+                            <p className="text-sm font-medium">{localBook.semester}</p>
+                          </div>
+                        </div>
+                      )}
+                      {localBook.course_code && (
+                        <div className="flex items-center gap-2">
+                          <div className="p-2 bg-primary/10 rounded-lg">
+                            <Hash className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Course Code</p>
+                            <p className="text-sm font-medium">{localBook.course_code}</p>
+                          </div>
+                        </div>
+                      )}
+                      {localBook.isbn && (
+                        <div className="flex items-center gap-2">
+                          <div className="p-2 bg-primary/10 rounded-lg">
+                            <FileText className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">ISBN</p>
+                            <p className="text-sm font-medium font-mono">{localBook.isbn}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
               )}
 
               {book?.volumeInfo.industryIdentifiers && book.volumeInfo.industryIdentifiers.length > 0 && (
-                <div className="flex gap-2 text-sm text-muted-foreground flex-wrap mt-2">
+                <div className="flex gap-3 text-sm text-muted-foreground flex-wrap mt-3">
                   {book.volumeInfo.industryIdentifiers.map((identifier, idx) => (
-                    <span key={idx}>{identifier.type}: {identifier.identifier}</span>
+                    <span key={idx} className="bg-secondary/50 px-2 py-1 rounded text-xs font-mono">
+                      {identifier.type}: {identifier.identifier}
+                    </span>
                   ))}
                 </div>
               )}
 
-              <div className="flex items-center gap-2 pt-2">
-                <span className="text-sm font-medium">Your Rating:</span>
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      onClick={() => handleRating(star)}
-                      className="transition-transform hover:scale-110 focus:outline-none"
-                    >
-                      <Star
-                        className={`h-5 w-5 transition-colors ${
-                          star <= userRating
-                            ? "fill-primary text-primary"
-                            : "text-muted-foreground"
-                        }`}
-                      />
-                    </button>
-                  ))}
-                </div>
-                {userRating > 0 && (
-                  <span className="text-sm text-muted-foreground ml-2">
-                    {userRating} star{userRating !== 1 ? "s" : ""}
-                  </span>
-                )}
-              </div>
+              {/* User Rating Section */}
+              <Card className="mt-4 bg-gradient-to-r from-primary/5 to-transparent border-primary/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold mb-1">Rate this book</h3>
+                      <p className="text-xs text-muted-foreground">Share your thoughts with others</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            onClick={() => handleRating(star)}
+                            className="transition-all hover:scale-125 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded p-0.5"
+                          >
+                            <Star
+                              className={`h-6 w-6 transition-colors ${
+                                star <= userRating
+                                  ? "fill-primary text-primary"
+                                  : "text-muted-foreground/40 hover:text-muted-foreground"
+                              }`}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                      {userRating > 0 && (
+                        <Badge variant="secondary" className="ml-2">
+                          {userRating}/5
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
+            {/* Genre Tags */}
             {genre && (
               <div className="flex gap-2 flex-wrap">
-                <Badge variant="secondary">{genre}</Badge>
+                <Badge variant="secondary" className="text-sm px-3 py-1">{genre}</Badge>
                 {book?.volumeInfo.categories?.slice(1).map((category) => (
-                  <Badge key={category} variant="secondary">
+                  <Badge key={category} variant="outline" className="text-sm px-3 py-1">
                     {category}
                   </Badge>
                 ))}
               </div>
             )}
 
+            {/* Description */}
             {description && (
-              <Card>
-                <CardContent className="pt-6">
-                  <h2 className="text-2xl font-serif font-bold mb-4">About This Book</h2>
+              <Card className="overflow-hidden">
+                <CardContent className="p-6">
+                  <h2 className="text-xl sm:text-2xl font-serif font-bold mb-4 flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-primary" />
+                    About This Book
+                  </h2>
                   <div
-                    className="text-muted-foreground leading-relaxed"
+                    className="text-muted-foreground leading-relaxed prose prose-sm max-w-none"
                     dangerouslySetInnerHTML={{ __html: description }}
                   />
                 </CardContent>
@@ -545,24 +707,32 @@ const BookDetails = () => {
 
             {/* Local recommended books */}
             {localRecommendedBooks.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-serif font-bold mb-4">
-                  Related {localBook?.genre} Books
-                  {localBook?.semester && (
-                    <span className="text-base font-normal text-muted-foreground ml-2">
-                      (Semester {localBook.semester})
-                    </span>
-                  )}
-                </h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  More books from {localBook?.department} department
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {localRecommendedBooks.slice(0, 4).map((recBook) => (
-                    <div 
+              <div className="mt-8 pt-6 border-t border-border/50">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-serif font-bold flex items-center gap-2">
+                      <GraduationCap className="h-5 w-5 text-primary" />
+                      Related {localBook?.genre} Books
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {localBook?.department} • Semester {localBook?.semester}
+                    </p>
+                  </div>
+                  <Link 
+                    to={`/?department=${encodeURIComponent(localBook?.department || '')}&semester=${localBook?.semester}`}
+                    className="text-sm text-primary hover:underline flex items-center gap-1"
+                  >
+                    View all
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                  {localRecommendedBooks.slice(0, 4).map((recBook, index) => (
+                    <Link 
                       key={recBook.id} 
-                      onClick={() => navigate(`/book/${recBook.id}`)}
-                      className="cursor-pointer"
+                      to={`/book/${recBook.id}`}
+                      className="block transition-all hover:-translate-y-1"
+                      style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <BookCard
                         id={recBook.id}
@@ -576,8 +746,9 @@ const BookDetails = () => {
                         department={recBook.department}
                         semester={recBook.semester}
                         courseCode={recBook.course_code}
+                        pdfUrl={recBook.pdf_url}
                       />
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -585,14 +756,18 @@ const BookDetails = () => {
 
             {/* Google Books recommended */}
             {recommendedBooks.length > 0 && !localBook && (
-              <div>
-                <h2 className="text-2xl font-serif font-bold mb-4">Recommended Books</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {recommendedBooks.slice(0, 4).map((recBook) => (
-                    <div 
+              <div className="mt-8 pt-6 border-t border-border/50">
+                <h2 className="text-xl sm:text-2xl font-serif font-bold mb-4 flex items-center gap-2">
+                  <Star className="h-5 w-5 text-primary" />
+                  Recommended for You
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                  {recommendedBooks.slice(0, 4).map((recBook, index) => (
+                    <Link 
                       key={recBook.id} 
-                      onClick={() => navigate(`/book/${recBook.id}`)}
-                      className="cursor-pointer"
+                      to={`/book/${recBook.id}`}
+                      className="block transition-all hover:-translate-y-1"
+                      style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <BookCard
                         id={recBook.id}
@@ -608,7 +783,7 @@ const BookDetails = () => {
                         }
                         imageUrl={recBook.volumeInfo.imageLinks?.thumbnail}
                       />
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
