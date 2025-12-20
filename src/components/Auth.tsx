@@ -5,12 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Eye, EyeOff, GraduationCap, Sparkles } from "lucide-react";
 
 export const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -52,20 +53,45 @@ export const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-subtle p-4">
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM5OTkiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50"></div>
-      <Card className="w-full max-w-md shadow-book relative animate-fade-in">
+    <div className="min-h-screen flex items-center justify-center p-4 overflow-hidden relative">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5" />
+      
+      {/* Floating decoration elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 text-primary/10 animate-pulse-soft">
+          <BookOpen className="h-24 w-24" />
+        </div>
+        <div className="absolute bottom-32 right-16 text-secondary/10 animate-pulse-soft animation-delay-200">
+          <GraduationCap className="h-32 w-32" />
+        </div>
+        <div className="absolute top-1/3 right-1/4 text-primary/5 animate-pulse-soft animation-delay-300">
+          <Sparkles className="h-16 w-16" />
+        </div>
+        {/* Animated circles */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse-soft" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-secondary/5 rounded-full blur-3xl animate-pulse-soft animation-delay-200" />
+      </div>
+
+      {/* Subtle pattern overlay */}
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM5OTkiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
+      
+      <Card className="w-full max-w-md shadow-book relative animate-scale-in border-border/50 backdrop-blur-sm bg-card/95">
         <CardHeader className="text-center space-y-4 pb-2">
           <div className="flex justify-center">
-            <div className="h-20 w-20 rounded-2xl bg-gradient-hero flex items-center justify-center shadow-lg animate-fade-in">
-              <BookOpen className="h-10 w-10 text-primary-foreground" />
+            <div className="relative">
+              <div className="h-20 w-20 rounded-2xl bg-gradient-hero flex items-center justify-center shadow-lg animate-fade-in">
+                <BookOpen className="h-10 w-10 text-primary-foreground" />
+              </div>
+              {/* Glow effect */}
+              <div className="absolute inset-0 h-20 w-20 rounded-2xl bg-gradient-hero blur-xl opacity-30 -z-10" />
             </div>
           </div>
           <div className="space-y-1">
-            <CardTitle className="font-serif text-2xl">
+            <CardTitle className="font-serif text-2xl animate-fade-in animation-delay-100">
               {isLogin ? "Welcome Back" : "Join MAJU Library"}
             </CardTitle>
-            <CardDescription className="text-sm">
+            <CardDescription className="text-sm animate-fade-in animation-delay-200">
               {isLogin
                 ? "Sign in to access course materials and textbooks"
                 : "Create an account to start your learning journey"}
@@ -74,7 +100,7 @@ export const Auth = () => {
         </CardHeader>
         <CardContent className="pt-4">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
+            <div className="space-y-2 animate-fade-in animation-delay-200">
               <Label htmlFor="email" className="text-sm font-medium">Email</Label>
               <Input
                 id="email"
@@ -83,22 +109,35 @@ export const Auth = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-11 transition-all focus:ring-2 focus:ring-primary/20"
+                className="h-11 transition-all focus:ring-2 focus:ring-primary/20 bg-background/50"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 animate-fade-in animation-delay-300">
               <Label htmlFor="password" className="text-sm font-medium">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="h-11 transition-all focus:ring-2 focus:ring-primary/20"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="h-11 pr-10 transition-all focus:ring-2 focus:ring-primary/20 bg-background/50"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
-            <Button type="submit" className="w-full h-11 font-medium" disabled={loading}>
+            <Button 
+              type="submit" 
+              className="w-full h-11 font-medium animate-fade-in animation-delay-400 shadow-lg hover:shadow-xl transition-all" 
+              disabled={loading}
+            >
               {loading ? (
                 <span className="flex items-center gap-2">
                   <span className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
@@ -109,11 +148,11 @@ export const Auth = () => {
               )}
             </Button>
           </form>
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center animate-fade-in animation-delay-400">
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-primary hover:underline transition-colors"
+              className="text-sm text-primary hover:underline transition-colors font-medium"
             >
               {isLogin
                 ? "Don't have an account? Sign up"
