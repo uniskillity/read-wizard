@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Heart, Star, Download, Eye, Sparkles } from "lucide-react";
+import { BookOpen, Heart, Star, Download, Eye, Sparkles, GraduationCap, Calendar, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -72,147 +72,174 @@ export const BookCard = ({
 
   return (
     <Card 
-      className="group h-full overflow-hidden transition-all duration-500 hover:shadow-book hover:-translate-y-2 border-border/50 hover:border-primary/30 bg-card"
+      className="group h-full overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-3 border-0 bg-card rounded-2xl relative"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
+      {/* Decorative corner accent */}
+      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-primary/10 to-transparent rounded-bl-[100%] pointer-events-none transition-opacity duration-300 group-hover:opacity-100 opacity-0" />
+      
       {/* Image Section */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+      <div className="relative aspect-[3/4] overflow-hidden bg-muted">
         {imageUrl && !imageError ? (
           <>
             {!imageLoaded && (
-              <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10 animate-pulse" />
+              <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/10">
+                <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-background/20 to-transparent" 
+                  style={{ animation: 'shimmer 2s infinite' }} />
+              </div>
             )}
             <img 
               src={imageUrl.replace('http:', 'https:')} 
               alt={title}
-              className={`w-full h-full object-cover transition-all duration-700 ${
+              className={`w-full h-full object-cover transition-all duration-700 ease-out ${
                 imageLoaded ? 'opacity-100' : 'opacity-0'
-              } ${isHovered ? 'scale-110 blur-[1px]' : 'scale-100'}`}
+              } ${isHovered ? 'scale-110' : 'scale-100'}`}
               loading="lazy"
               onLoad={() => setImageLoaded(true)}
               onError={() => setImageError(true)}
             />
-            {/* Overlay on hover */}
-            <div className={`absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/40 to-transparent transition-opacity duration-300 ${
-              isHovered ? 'opacity-100' : 'opacity-0'
+            {/* Gradient overlay */}
+            <div className={`absolute inset-0 transition-all duration-500 ${
+              isHovered 
+                ? 'bg-gradient-to-t from-primary via-primary/60 to-primary/20' 
+                : 'bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent'
             }`} />
           </>
         ) : (
           <div className={`w-full h-full bg-gradient-to-br ${getPlaceholderGradient()} flex items-center justify-center p-6 relative overflow-hidden`}>
-            {/* Decorative pattern */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-4 left-4 w-16 h-16 border-2 border-white rounded-lg rotate-12" />
-              <div className="absolute bottom-4 right-4 w-12 h-12 border-2 border-white rounded-full" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border border-white/30 rounded-lg rotate-45" />
+            {/* Animated decorative elements */}
+            <div className="absolute inset-0">
+              <div className="absolute top-6 left-6 w-20 h-20 border border-white/20 rounded-2xl rotate-12 transition-transform duration-700 group-hover:rotate-45" />
+              <div className="absolute bottom-8 right-6 w-14 h-14 border border-white/20 rounded-full transition-transform duration-700 group-hover:scale-150 group-hover:opacity-0" />
+              <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-32 h-32 border border-white/10 rounded-full transition-all duration-700 group-hover:w-40 group-hover:h-40" />
+              <div className="absolute bottom-1/4 left-8 w-8 h-8 bg-white/10 rounded-lg rotate-45" />
             </div>
             <div className="text-center text-white relative z-10">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm mb-3">
-                <BookOpen className="h-7 w-7" />
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                <BookOpen className="h-8 w-8" />
               </div>
-              <p className="text-sm font-medium line-clamp-2 leading-tight">{title}</p>
+              <p className="text-base font-semibold line-clamp-2 leading-tight px-2">{title}</p>
             </div>
           </div>
         )}
 
-        {/* Top badges */}
-        <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
-          {/* Rating badge */}
-          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-xs font-medium">
-            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+        {/* Top left: Semester badge */}
+        {semester && (
+          <div className="absolute top-4 left-4">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg backdrop-blur-sm">
+              <GraduationCap className="h-3.5 w-3.5" />
+              <span>Sem {semester}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Top right: Rating */}
+        <div className="absolute top-4 right-4">
+          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-foreground/80 backdrop-blur-sm text-background text-xs font-bold shadow-lg">
+            <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
             <span>{rating.toFixed(1)}</span>
           </div>
-          
-          {/* PDF indicator */}
-          {pdfUrl && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium shadow-lg">
-                  <Download className="h-3 w-3" />
-                  <span className="hidden sm:inline">PDF</span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>Download PDF</TooltipContent>
-            </Tooltip>
-          )}
         </div>
 
-        {/* Save button - floating */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              className={`absolute bottom-3 right-3 p-2.5 rounded-full shadow-lg transition-all duration-300 ${
-                isSaved 
-                  ? 'bg-secondary text-secondary-foreground scale-110' 
-                  : 'bg-white/90 text-foreground hover:bg-white hover:scale-110'
-              }`}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleSave();
-              }}
-            >
-              <Heart className={`h-4 w-4 transition-all ${isSaved ? 'fill-current animate-scale-in' : ''}`} />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>{isSaved ? "Saved!" : "Save for later"}</TooltipContent>
-        </Tooltip>
+        {/* Bottom info strip */}
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <div className={`transition-all duration-500 ${isHovered ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
+            <h3 className="font-serif text-lg font-bold text-white line-clamp-2 drop-shadow-lg leading-tight mb-1">
+              {title}
+            </h3>
+            <p className="text-white/80 text-sm font-medium">{author}</p>
+          </div>
+        </div>
 
         {/* Hover overlay content */}
-        <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
-          isHovered && imageUrl && !imageError ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 transition-all duration-500 ${
+          isHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/95 text-foreground font-medium shadow-xl">
-            <Eye className="h-4 w-4" />
-            <span className="text-sm">View Details</span>
+          {/* Quick action buttons */}
+          <div className="flex items-center gap-3 mb-6">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className={`p-3 rounded-full shadow-xl transition-all duration-300 hover:scale-110 ${
+                    isSaved 
+                      ? 'bg-secondary text-secondary-foreground' 
+                      : 'bg-white text-foreground hover:bg-white/90'
+                  }`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSave();
+                  }}
+                >
+                  <Heart className={`h-5 w-5 transition-all ${isSaved ? 'fill-current' : ''}`} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{isSaved ? "Saved!" : "Save for later"}</TooltipContent>
+            </Tooltip>
+
+            {pdfUrl && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="p-3 rounded-full bg-white text-foreground shadow-xl transition-all duration-300 hover:scale-110 hover:bg-white/90"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                  >
+                    <Download className="h-5 w-5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Download PDF</TooltipContent>
+              </Tooltip>
+            )}
           </div>
+
+          {/* View details button */}
+          <button className="group/btn flex items-center gap-2 px-6 py-3 rounded-full bg-white text-foreground font-semibold shadow-2xl transition-all duration-300 hover:gap-4 hover:px-7">
+            <Eye className="h-4 w-4" />
+            <span>View Details</span>
+            <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+          </button>
         </div>
       </div>
 
       {/* Content Section */}
-      <CardHeader className="space-y-3 pb-3">
-        <div className="space-y-1">
-          <CardTitle className="font-serif text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors duration-300">
-            {title}
-          </CardTitle>
-          <CardDescription className="font-sans text-sm line-clamp-1 flex items-center gap-1">
-            <span className="text-muted-foreground">by</span>
-            <span className="font-medium text-foreground/80">{author}</span>
-          </CardDescription>
-        </div>
-        
-        {/* Tags */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {semester && (
-            <Badge className="font-sans text-[10px] bg-primary text-primary-foreground border-0 shadow-sm">
-              Semester {semester}
-            </Badge>
-          )}
+      <CardHeader className="space-y-3 pb-2 pt-4">
+        {/* Meta badges */}
+        <div className="flex items-center gap-2 flex-wrap">
           {department && (
-            <Badge variant="outline" className="font-sans text-[10px] bg-muted/50 border-border truncate max-w-[100px]">
+            <Badge variant="outline" className="font-sans text-[10px] bg-muted/50 border-border/50 text-muted-foreground px-2 py-0.5">
               {department.replace('BS ', '')}
             </Badge>
           )}
           {courseCode && (
-            <Badge variant="secondary" className="font-sans text-[10px] bg-secondary/10 text-secondary border-0">
+            <Badge className="font-sans text-[10px] bg-primary/10 text-primary border-0 px-2 py-0.5">
               {courseCode}
             </Badge>
           )}
+          {publishedYear && (
+            <Badge variant="outline" className="font-sans text-[10px] border-border/50 text-muted-foreground px-2 py-0.5">
+              <Calendar className="h-2.5 w-2.5 mr-1" />
+              {publishedYear}
+            </Badge>
+          )}
         </div>
-      </CardHeader>
 
-      <CardContent className="pt-0 space-y-4">
         {/* Description */}
         {description && (
           <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
             {description}
           </p>
         )}
+      </CardHeader>
 
-        {/* Rating section */}
-        <div className="flex items-center justify-between py-3 px-3 -mx-3 bg-muted/30 rounded-lg">
-          <span className="text-xs text-muted-foreground font-medium">Your rating</span>
-          <div className="flex items-center gap-1">
+      <CardContent className="pt-0 space-y-3 pb-4">
+        {/* Interactive rating section */}
+        <div className="flex items-center justify-between py-2.5 px-3 bg-muted/40 rounded-xl">
+          <span className="text-xs text-muted-foreground font-medium">Rate this</span>
+          <div className="flex items-center gap-0.5">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
@@ -221,13 +248,13 @@ export const BookCard = ({
                   e.stopPropagation();
                   handleRate(star);
                 }}
-                className="transition-all duration-200 hover:scale-125 p-0.5"
+                className="transition-all duration-200 hover:scale-125 p-1 group/star"
               >
                 <Star
                   className={`h-4 w-4 transition-all duration-200 ${
                     star <= userRating
                       ? "fill-yellow-400 text-yellow-400 drop-shadow-sm"
-                      : "text-muted-foreground/30 hover:text-yellow-400/50"
+                      : "text-muted-foreground/30 group-hover/star:text-yellow-400/60"
                   }`}
                 />
               </button>
@@ -237,11 +264,12 @@ export const BookCard = ({
 
         {/* Action button */}
         <Button 
-          className="w-full h-10 font-medium transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-lg" 
+          className="w-full h-11 font-semibold transition-all duration-300 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border-0 group/explore" 
           variant="outline"
         >
-          <Sparkles className="mr-2 h-4 w-4 transition-transform group-hover:rotate-12" />
+          <Sparkles className="mr-2 h-4 w-4 transition-transform duration-300 group-hover/explore:rotate-12" />
           Explore Book
+          <ArrowRight className="ml-2 h-4 w-4 opacity-0 -translate-x-2 transition-all duration-300 group-hover/explore:opacity-100 group-hover/explore:translate-x-0" />
         </Button>
       </CardContent>
     </Card>
