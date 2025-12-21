@@ -96,6 +96,10 @@ export default {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.7" }
         },
+        "float": {
+          "0%, 100%": { transform: "translateY(0) rotate(var(--tw-rotate, 0))" },
+          "50%": { transform: "translateY(-10px) rotate(var(--tw-rotate, 0))" }
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -105,6 +109,7 @@ export default {
         "scale-in": "scale-in 0.3s ease-out forwards",
         "shimmer": "shimmer 2s linear infinite",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
+        "float": "float 6s ease-in-out infinite",
       },
     },
   },
