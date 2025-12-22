@@ -5,11 +5,13 @@ import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { BookCard } from "@/components/BookCard";
-import { getBookDetails, GoogleBook } from "@/lib/googleBooks";
+import { Tables } from "@/integrations/supabase/types";
+
+type Book = Tables<"books">;
 
 const SavedBooks = () => {
   const [session, setSession] = useState<any>(null);
-  const [books, setBooks] = useState<GoogleBook[]>([]);
+  const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -27,17 +29,30 @@ const SavedBooks = () => {
 
   const loadSavedBooks = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: readingHistory, error: historyError } = await supabase
         .from("reading_history")
         .select("book_id")
         .eq("user_id", session.user.id)
         .eq("status", "want_to_read");
 
-      if (error) throw error;
+      if (historyError) throw historyError;
 
-      const bookPromises = data.map((item) => getBookDetails(item.book_id));
-      const booksData = await Promise.all(bookPromises);
-      setBooks(booksData.filter((b) => b !== null) as GoogleBook[]);
+      if (!readingHistory || readingHistory.length === 0) {
+        setBooks([]);
+        setLoading(false);
+        return;
+      }
+
+      const bookIds = readingHistory.map((item) => item.book_id);
+      
+      const { data: booksData, error: booksError } = await supabase
+        .from("books")
+        .select("*")
+        .in("id", bookIds);
+
+      if (booksError) throw booksError;
+
+      setBooks(booksData || []);
     } catch (error) {
       console.error("Error loading saved books:", error);
     } finally {
@@ -68,12 +83,12 @@ const SavedBooks = () => {
               <div key={book.id} onClick={() => navigate(`/book/${book.id}`)} className="cursor-pointer">
                 <BookCard
                   id={book.id}
-                  title={book.volumeInfo.title}
-                  author={book.volumeInfo.authors?.join(", ") || "Unknown"}
-                  description={book.volumeInfo.description}
-                  genre={book.volumeInfo.categories?.[0] || "General"}
-                  rating={book.volumeInfo.averageRating}
-                  imageUrl={book.volumeInfo.imageLinks?.thumbnail}
+                  title={book.title}
+                  author={book.author}
+                  description={book.description || undefined}
+                  genre={book.genre}
+                  rating={book.rating ? Number(book.rating) : undefined}
+                  imageUrl={book.cover_url || undefined}
                 />
               </div>
             ))}
