@@ -1,4 +1,4 @@
-import { BookOpen, Users, TrendingUp, Clock, Layers } from "lucide-react";
+import { BookOpen, TrendingUp, Clock, Layers, Award } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -47,40 +47,55 @@ const StatCard = ({
   label, 
   value, 
   isDecimal, 
-  delay, 
-  gradient 
+  delay,
+  accentColor,
 }: { 
   icon: any; 
   label: string; 
   value: number; 
   isDecimal?: boolean;
   delay: number;
-  gradient: string;
+  accentColor: 'primary' | 'secondary';
 }) => {
   const animatedValue = useCountUp(isDecimal ? Math.floor(value * 10) : value, 1500);
   const displayValue = isDecimal ? (animatedValue / 10).toFixed(1) : animatedValue;
 
   return (
     <div
-      className="group relative overflow-hidden rounded-xl border bg-card p-4 shadow-sm hover:shadow-card transition-all duration-300 animate-fade-in"
+      className="group relative overflow-hidden rounded-2xl border bg-card p-5 shadow-sm hover:shadow-card transition-all duration-500 animate-fade-in cursor-default"
       style={{ animationDelay: `${delay}ms` }}
     >
       {/* Gradient background on hover */}
-      <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${gradient}`} />
+      <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-500 ${
+        accentColor === 'primary' 
+          ? 'bg-gradient-to-br from-primary/10 via-transparent to-transparent' 
+          : 'bg-gradient-to-br from-secondary/10 via-transparent to-transparent'
+      }`} />
+      
+      {/* Glow effect */}
+      <div className={`absolute -top-12 -right-12 w-24 h-24 rounded-full blur-2xl opacity-0 group-hover:opacity-30 transition-all duration-500 ${
+        accentColor === 'primary' ? 'bg-primary' : 'bg-secondary'
+      }`} />
       
       <div className="relative flex items-center gap-4">
-        <div className="p-3 rounded-xl bg-muted group-hover:bg-background/50 transition-colors">
-          <Icon className="h-6 w-6 text-primary group-hover:scale-110 transition-transform" />
+        <div className={`p-3 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 ${
+          accentColor === 'primary' 
+            ? 'bg-primary/10 group-hover:bg-primary/20' 
+            : 'bg-secondary/10 group-hover:bg-secondary/20'
+        }`}>
+          <Icon className={`h-6 w-6 transition-colors ${
+            accentColor === 'primary' ? 'text-primary' : 'text-secondary'
+          }`} />
         </div>
         <div>
-          <p className="text-3xl font-bold tracking-tight">{displayValue}</p>
-          <p className="text-xs text-muted-foreground font-medium">{label}</p>
+          <p className="text-3xl font-bold tracking-tight transition-transform duration-300 group-hover:scale-105">{displayValue}</p>
+          <p className="text-xs text-muted-foreground font-medium mt-0.5">{label}</p>
         </div>
       </div>
       
       {/* Decorative element */}
-      <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity">
-        <Icon className="h-20 w-20" />
+      <div className="absolute -bottom-6 -right-6 opacity-[0.03] group-hover:opacity-[0.08] transition-all duration-500 group-hover:scale-110 group-hover:rotate-12">
+        <Icon className="h-24 w-24" />
       </div>
     </div>
   );
@@ -125,17 +140,17 @@ export const StatsBar = () => {
   };
 
   const statItems = [
-    { icon: BookOpen, label: "Total Books", value: stats.totalBooks, gradient: "bg-gradient-to-br from-primary/10 to-transparent" },
-    { icon: Layers, label: "Departments", value: stats.totalDepartments, gradient: "bg-gradient-to-br from-secondary/10 to-transparent" },
-    { icon: TrendingUp, label: "Avg Rating", value: stats.avgRating, isDecimal: true, gradient: "bg-gradient-to-br from-primary/10 to-transparent" },
-    { icon: Clock, label: "Semesters", value: stats.totalSemesters, gradient: "bg-gradient-to-br from-secondary/10 to-transparent" },
+    { icon: BookOpen, label: "Total Books", value: stats.totalBooks, accentColor: 'primary' as const },
+    { icon: Layers, label: "Departments", value: stats.totalDepartments, accentColor: 'secondary' as const },
+    { icon: Award, label: "Avg Rating", value: stats.avgRating, isDecimal: true, accentColor: 'primary' as const },
+    { icon: Clock, label: "Semesters", value: stats.totalSemesters, accentColor: 'secondary' as const },
   ];
 
   if (loading) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-24 bg-muted rounded-xl animate-pulse" />
+          <div key={i} className="h-28 bg-muted rounded-2xl animate-pulse" />
         ))}
       </div>
     );
