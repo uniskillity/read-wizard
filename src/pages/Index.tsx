@@ -7,28 +7,16 @@ import { BookCard } from "@/components/BookCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, GraduationCap, Library, FileText, X, Loader2, ArrowRight, Sparkles, TrendingUp } from "lucide-react";
+import { Search, BookOpen, GraduationCap, Library, FileText, X, Loader2, ArrowRight, Sparkles, TrendingUp, Wifi } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import heroImage from "@/assets/hero-maju.jpg";
 import { Link } from "react-router-dom";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { StatsBar } from "@/components/StatsBar";
 import { Badge } from "@/components/ui/badge";
+import { Tables } from "@/integrations/supabase/types";
 
-interface Book {
-  id: string;
-  title: string;
-  author: string;
-  description: string | null;
-  genre: string;
-  rating: number | null;
-  published_year: number | null;
-  cover_url: string | null;
-  department: string | null;
-  semester: number | null;
-  course_code: string | null;
-  pdf_url: string | null;
-}
+type Book = Tables<"books">;
 
 const DEPARTMENTS = [
   "All Departments",
@@ -53,7 +41,63 @@ const Index = () => {
   const [selectedDepartment, setSelectedDepartment] = useState("All Departments");
   const [selectedSemester, setSelectedSemester] = useState("All Semesters");
   const [isSearching, setIsSearching] = useState(false);
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
   const { toast } = useToast();
+
+  // Realtime subscription for books
+  useEffect(() => {
+    const channel = supabase
+      .channel('books-realtime-index')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'books'
+        },
+        (payload) => {
+          const newBook = payload.new as Book;
+          setBooks(prev => [newBook, ...prev]);
+          toast({
+            title: "New book added",
+            description: `"${newBook.title}" is now available`,
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'books'
+        },
+        (payload) => {
+          const updatedBook = payload.new as Book;
+          setBooks(prev => prev.map(book => 
+            book.id === updatedBook.id ? updatedBook : book
+          ));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'books'
+        },
+        (payload) => {
+          const deletedBook = payload.old as { id: string };
+          setBooks(prev => prev.filter(book => book.id !== deletedBook.id));
+        }
+      )
+      .subscribe((status) => {
+        setIsRealtimeConnected(status === 'SUBSCRIBED');
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [toast]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
