@@ -5,32 +5,69 @@ import { BookCard } from "@/components/BookCard";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, BookOpen, GraduationCap, Flame } from "lucide-react";
+import { TrendingUp, BookOpen, GraduationCap, Flame, Wifi } from "lucide-react";
+import { Tables } from "@/integrations/supabase/types";
+import { useToast } from "@/hooks/use-toast";
 
-interface LocalBook {
-  id: string;
-  title: string;
-  author: string;
-  description?: string;
-  genre: string;
-  cover_url?: string;
-  published_year?: number;
-  rating?: number;
-  department?: string;
-  semester?: number;
-  course_code?: string;
-  pdf_url?: string;
-}
+type Book = Tables<"books">;
 
 const Trending = () => {
-  const [books, setBooks] = useState<LocalBook[]>([]);
+  const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [departments, setDepartments] = useState<string[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadTrending();
   }, [selectedDepartment]);
+
+  // Realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('books-realtime-trending')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'books'
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newBook = payload.new as Book;
+            setBooks(prev => {
+              const updated = [newBook, ...prev].sort((a, b) => 
+                (Number(b.rating) || 0) - (Number(a.rating) || 0)
+              ).slice(0, 20);
+              return updated;
+            });
+            toast({
+              title: "New book added",
+              description: `"${newBook.title}" is now available`,
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedBook = payload.new as Book;
+            setBooks(prev => prev.map(book => 
+              book.id === updatedBook.id ? updatedBook : book
+            ).sort((a, b) => 
+              (Number(b.rating) || 0) - (Number(a.rating) || 0)
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            const deletedBook = payload.old as { id: string };
+            setBooks(prev => prev.filter(book => book.id !== deletedBook.id));
+          }
+        }
+      )
+      .subscribe((status) => {
+        setIsRealtimeConnected(status === 'SUBSCRIBED');
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [toast]);
 
   const loadTrending = async () => {
     setLoading(true);
@@ -46,10 +83,10 @@ const Trending = () => {
       query = query.eq("department", selectedDepartment);
     }
     
-    const { data, error } = await query;
+    const { data } = await query;
     
     if (data) {
-      setBooks(data as LocalBook[]);
+      setBooks(data);
       
       // Extract unique departments for filter
       if (!selectedDepartment) {
@@ -72,6 +109,12 @@ const Trending = () => {
               <TrendingUp className="h-6 w-6 text-primary" />
             </div>
             <h1 className="text-3xl sm:text-4xl font-serif font-bold">Trending Books</h1>
+            {isRealtimeConnected && (
+              <Badge variant="secondary" className="ml-2 gap-1">
+                <Wifi className="h-3 w-3" />
+                Live
+              </Badge>
+            )}
           </div>
           <p className="text-muted-foreground mt-2 flex items-center gap-2">
             <GraduationCap className="h-4 w-4" />
@@ -152,7 +195,7 @@ const Trending = () => {
                   author={book.author}
                   description={book.description}
                   genre={book.genre}
-                  rating={book.rating || 0}
+                  rating={Number(book.rating) || 0}
                   publishedYear={book.published_year}
                   imageUrl={book.cover_url}
                   department={book.department}
