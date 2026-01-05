@@ -1,73 +1,155 @@
-# Welcome to your Lovable project
+# 📘 Read-Wizard
 
-## Project info
+Read-Wizard is a modern **AI-assisted reading and summarization web application** designed to help users read smarter, faster, and more effectively. It provides an interactive reading experience with structured content flow, clean UI, and future-ready AI integrations.
 
-**URL**: https://lovable.dev/projects/ce44048f-4199-4db5-a23e-1d523376ab8c
+---
 
-## How can I edit this code?
+## 🚀 Project Overview
 
-There are several ways of editing your application.
+**Read-Wizard** helps users:
 
-**Use Lovable**
+* Read long text content step-by-step
+* Focus on key points
+* Improve comprehension
+* Prepare for AI-based summaries and recommendations
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/ce44048f-4199-4db5-a23e-1d523376ab8c) and start prompting.
+The project is built using modern frontend technologies and follows scalable, production-ready architecture.
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## 🌐 Live Project
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+**Project URL:**
+https://maju-book-recommender.vercel.app/
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## ✨ Key Features
 
-Follow these steps:
+* 📖 Structured reading flow (wizard-style)
+* ⚡ Fast and responsive UI
+* 🎨 Clean, modern design
+* 🔌 Ready for AI features (summarization, insights)
+* 🧩 Modular and reusable components
+* 🌐 Web-based, no installation required
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
+## 🛠️ Tech Stack
 
 This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+* **Vite** – Fast build tool
+* **React** – Component-based UI
+* **TypeScript** – Type safety and scalability
+* **Tailwind CSS** – Utility-first styling
+* **shadcn-ui** – Modern UI components
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/ce44048f-4199-4db5-a23e-1d523376ab8c) and click on Share -> Publish.
+## 📂 Project Structure (Simplified)
 
-## Can I connect a custom domain to my Lovable project?
+```
+src/
+ ├─ components/     # Reusable UI components
+ ├─ pages/          # Application pages
+ ├─ hooks/          # Custom React hooks
+ ├─ styles/         # Global styles
+ ├─ utils/          # Helper functions
+ └─ main.tsx        # App entry point
+```
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 🧑‍💻 How to Edit This Project
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+### Option 1: Use Lovable (Recommended)
+
+You can edit and prompt directly from Lovable:
+
+👉 [https://lovable.dev/projects/ce44048f-4199-4db5-a23e-1d523376ab8c](https://lovable.dev/projects/ce44048f-4199-4db5-a23e-1d523376ab8c)
+
+All changes made there are automatically committed to this repository.
+
+---
+
+### Option 2: Run Locally (Using Your IDE)
+
+#### Prerequisites
+
+* Node.js (v18+ recommended)
+* npm
+
+#### Steps
+
+```bash
+# Clone the repository
+git clone <YOUR_GIT_URL>
+
+# Go to project directory
+cd read-wizard
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+The app will be available at:
+
+```
+http://localhost:5173
+```
+
+---
+
+### Option 3: Edit Directly on GitHub
+
+1. Open any file in the repository
+2. Click ✏️ **Edit**
+3. Make changes
+4. Commit to save
+
+---
+
+### Option 4: GitHub Codespaces
+
+1. Click **Code**
+2. Open **Codespaces**
+3. Create a new Codespace
+4. Edit and push changes directly
+
+---
+
+## 🚀 Deployment
+
+Deployment is handled directly via **Lovable**:
+
+1. Open the project on Lovable
+2. Click **Share → Publish**
+3. Your app goes live instantly
+
+---
+
+## 🌍 Custom Domain Support
+
+You can connect a custom domain:
+
+1. Go to **Project → Settings → Domains**
+2. Click **Connect Domain**
+
+📖 Guide:
+https://github.com/uniskillity/read-wizard
+https://maju-book-recommender.vercel.app/
+
+---
+
+## 🔮 Future Enhancements
+
+* AI text summarization
+* Reading analytics
+* User accounts & progress tracking
+* Book/article recommendations
+* Export summaries (PDF / Notes)
+
+
